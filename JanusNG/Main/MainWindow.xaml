@@ -16,7 +16,7 @@
 		<local:GravatarConverter x:Key="GravatarConv" Size="32">
 		</local:GravatarConverter>
 	</Window.Resources>
-	<Grid>
+	<Grid Margin="4">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
 			<RowDefinition />
@@ -25,9 +25,13 @@
 			<Button Click="SignInClick" Margin="8" Visibility="{Binding IsNotSignedIn, Converter={StaticResource BoolConv}}">
 				Sign In
 			</Button>
-			<StackPanel Visibility="{Binding IsSignedIn, Converter={StaticResource BoolConv}}" Orientation="Horizontal">
-				<Image Source="{Binding Me.Email, Converter={StaticResource GravatarConv}}" Margin="4"/>
-				<TextBlock Text="{Binding Me.DisplayName}"/>
+			<StackPanel Visibility="{Binding IsSignedIn, Converter={StaticResource BoolConv}}" Orientation="Horizontal" Margin="4">
+				<Ellipse Width="32" Height="32" Margin="4">
+					<Ellipse.Fill>
+						<ImageBrush ImageSource="{Binding Me.Email, Converter={StaticResource GravatarConv}}" />
+					</Ellipse.Fill>
+				</Ellipse>
+				<TextBlock Text="{Binding Me.DisplayName}" VerticalAlignment="Center"/>
 			</StackPanel>
 		</StackPanel>
 		<Grid Grid.Row="1">

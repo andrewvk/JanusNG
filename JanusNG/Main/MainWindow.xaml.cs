@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -47,7 +48,9 @@ namespace Rsdn.JanusNG.Main
 
 		private async Task ReloadModel()
 		{
-			Model.Forums = await _rsdnClient.Forums.GetForumsAsync();
+			Model.Forums = (await _rsdnClient.Forums.GetForumsAsync())
+				.OrderBy(f => f.Name)
+				.ToArray();
 		}
 
 		private async void ForumsSelectionChanged(object sender, SelectionChangedEventArgs e)
