@@ -1,5 +1,7 @@
 ﻿using System.Windows;
+using System.Windows.Navigation;
 using Rsdn.Api.Models.Messages;
+using Rsdn.Framework.Formatting.Resources;
 
 namespace Rsdn.JanusNG.MessageView
 {
@@ -14,6 +16,9 @@ namespace Rsdn.JanusNG.MessageView
 				typeof(MessageInfo),
 				typeof(MessageView),
 				new UIPropertyMetadata(null, ChangeCallback));
+
+		private static readonly string _css =
+			(string) ResourceProvider.ReadResource("Formatter.css").Read();
 
 		public MessageView()
 		{
@@ -30,8 +35,8 @@ namespace Rsdn.JanusNG.MessageView
 		{
 			var msgView = (MessageView)d;
 			msgView.MessageBrowser.NavigateToString(
-				"<head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8'></head>"
-				+ ((MessageInfo) e.NewValue)?.Body?.Text ?? " ");
+				$"<head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8'><style>{_css}</style></head>" +
+				$"<body><div class='m'>{((MessageInfo) e.NewValue)?.Body?.Text ?? " "}</div></body>");
 		}
 	}
 }
