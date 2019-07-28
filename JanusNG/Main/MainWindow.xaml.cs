@@ -76,7 +76,8 @@ namespace Rsdn.JanusNG.Main
 			.Select(m => new TopicNode
 			{
 				Message = m,
-				Children = new []{new MessageNode()}
+				IsLoaded = m.AnswersCount == 0,
+				Children = m.AnswersCount != 0 ? new []{new MessageNode()} : Array.Empty<MessageNode>()
 			})
 			.ToArray();
 
