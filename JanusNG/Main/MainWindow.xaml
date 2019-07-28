@@ -59,7 +59,7 @@
 					</ListView.ItemTemplate>
 				</ListView>
 				<GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" />
-				<msgview:MessageView Grid.Row="2" Message="{Binding Message}"/>
+				<msgview:MessageView x:Name="MessageView" Grid.Row="2" Message="{Binding Message}"/>
 			</Grid>
 		</Grid>
 	</Grid>

@@ -48,31 +48,34 @@ namespace Rsdn.JanusNG.Main
 
 		private async Task ReloadModel()
 		{
-			Model.Forums = (await _rsdnClient.Forums.GetForumsAsync())
-				.OrderBy(f => f.Name)
-				.ToArray();
+			using (ForumsList.ApplyLoader())
+				Model.Forums = (await _rsdnClient.Forums.GetForumsAsync())
+					.OrderBy(f => f.Name)
+					.ToArray();
 		}
 
 		private async void ForumsSelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			var forum = (ForumDescription)ForumsList.SelectedItem;
-			Model.Topics =
-				forum != null
-				? (await _rsdnClient.Messages.GetMessagesAsync(
-					limit: 100,
-					forumID: forum.ID,
-					onlyTopics: true))
-					.Items
-				: null;
+			using (MessagesList.ApplyLoader())
+				Model.Topics =
+					forum != null
+						? (await _rsdnClient.Messages.GetMessagesAsync(
+							limit: 100,
+							forumID: forum.ID,
+							onlyTopics: true))
+						.Items
+						: null;
 		}
 
 		private async void MessageSelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			var msg = (MessageInfo) MessagesList.SelectedItem;
-			Model.Message =
-				msg != null
-					? await _rsdnClient.Messages.GetMessageAsync(msg.ID, withRates: true, withBodies: true, formatBody: true)
-					: null;
+			using (MessageView.ApplyLoader())
+				Model.Message =
+					msg != null
+						? await _rsdnClient.Messages.GetMessageAsync(msg.ID, withRates: true, withBodies: true, formatBody: true)
+						: null;
 		}
 	}
 }
