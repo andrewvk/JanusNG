@@ -1,6 +1,8 @@
 ﻿using System.Windows;
+using System.Windows.Input;
 using Rsdn.Api.Models.Messages;
 using Rsdn.Framework.Formatting.Resources;
+using Rsdn.JanusNG.Rates;
 
 namespace Rsdn.JanusNG.MessageView
 {
@@ -36,6 +38,12 @@ namespace Rsdn.JanusNG.MessageView
 			msgView.MessageBrowser.NavigateToString(
 				$"<head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8'><style>{_css}</style></head>" +
 				$"<body><div class='m'>{((MessageInfo) e.NewValue)?.Body?.Text ?? " "}</div></body>");
+		}
+
+		private void RatesClick(object sender, MouseButtonEventArgs e)
+		{
+			var wnd = new RatesWindow(Message.Rates);
+			wnd.Show();
 		}
 	}
 }

@@ -32,7 +32,8 @@
 				<StackPanel Grid.Column="1">
 					<TextBlock Text="{Binding Message.Subject}" FontSize="16" FontWeight="DemiBold"/>
 					<TextBlock Text="{Binding Message.CreatedOn, StringFormat=g}" FontSize="13"/>
-					<TextBlock Text="{Binding Message.Rates, Converter={StaticResource RateStringConverter}}"/>
+					<TextBlock Text="{Binding Message.Rates, Converter={StaticResource RateStringConverter}}"
+					           TextDecorations="Underline" Cursor="Hand" MouseLeftButtonUp="RatesClick"/>
 				</StackPanel>
 			</Grid>
 			<WebBrowser Name="MessageBrowser" Grid.Row="1"/>

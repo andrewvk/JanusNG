@@ -1,0 +1,33 @@
+﻿<Window x:Class="Rsdn.JanusNG.Rates.RatesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Rsdn.JanusNG.Rates"
+        xmlns:messages="clr-namespace:Rsdn.Api.Models.Messages;assembly=Rsdn.Api.Models"
+        mc:Ignorable="d"
+        Title="RatesWindow" Height="450" Width="800"
+        d:DataContext="{d:DesignInstance messages:MessageRates}">
+	<Window.Resources>
+		<local:TotalRateConverter x:Key="TotalRateConv"/>
+	</Window.Resources>
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="*"/>
+			<RowDefinition Height="Auto"/>
+		</Grid.RowDefinitions>
+		<ListView ItemsSource="{Binding Rates}">
+			<ListView.View>
+				<GridView>
+					<GridViewColumn Header="Type" DisplayMemberBinding="{Binding Type}"/>
+					<GridViewColumn Header="Who" DisplayMemberBinding="{Binding RateBy.DisplayName}"/>
+					<GridViewColumn Header="Date" DisplayMemberBinding="{Binding RatedOn, StringFormat=g}"/>
+					<GridViewColumn Header="Value" DisplayMemberBinding="{Binding Converter={StaticResource TotalRateConv}}"/>
+				</GridView>
+			</ListView.View>
+		</ListView>
+		<StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Stretch" FlowDirection="RightToLeft">
+			<Button Content="OK" IsDefault="True" IsCancel="True" Margin="8" Click="OKClick"/>
+		</StackPanel>
+	</Grid>
+</Window>
