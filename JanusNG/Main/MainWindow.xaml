@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:localmain="clr-namespace:Rsdn.JanusNG.Main"
-        xmlns:local="clr-namespace:Rsdn.JanusNG"
+        xmlns:msgview="clr-namespace:Rsdn.JanusNG.MessageView"
         mc:Ignorable="d"
         Title="MainWindow" Height="900" Width="1200"
         Loaded="WindowLoaded">
@@ -12,9 +12,6 @@
 		<localmain:MainModel x:Name="Model" />
 	</Window.DataContext>
 	<Window.Resources>
-		<BooleanToVisibilityConverter x:Key="BoolConv"/>
-		<local:GravatarConverter x:Key="GravatarConv" Size="32">
-		</local:GravatarConverter>
 	</Window.Resources>
 	<Grid Margin="4">
 		<Grid.RowDefinitions>
@@ -22,13 +19,13 @@
 			<RowDefinition />
 		</Grid.RowDefinitions>
 		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-			<Button Click="SignInClick" Margin="8" Visibility="{Binding IsNotSignedIn, Converter={StaticResource BoolConv}}">
+			<Button Click="SignInClick" Margin="8" Visibility="{Binding IsNotSignedIn, Converter={StaticResource BoolConverter}}">
 				Sign In
 			</Button>
-			<StackPanel Visibility="{Binding IsSignedIn, Converter={StaticResource BoolConv}}" Orientation="Horizontal" Margin="4">
+			<StackPanel Visibility="{Binding IsSignedIn, Converter={StaticResource BoolConverter}}" Orientation="Horizontal" Margin="4">
 				<Ellipse Width="32" Height="32" Margin="4">
 					<Ellipse.Fill>
-						<ImageBrush ImageSource="{Binding Me.Email, Converter={StaticResource GravatarConv}}" />
+						<ImageBrush ImageSource="{Binding Me.GravatarHash, Converter={StaticResource GravatarConverterSmall}}" />
 					</Ellipse.Fill>
 				</Ellipse>
 				<TextBlock Text="{Binding Me.DisplayName}" VerticalAlignment="Center"/>
@@ -50,11 +47,11 @@
 			<GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
 			<Grid Grid.Column="2">
 				<Grid.RowDefinitions>
-					<RowDefinition Height="*" />
+					<RowDefinition Height="1*" />
 					<RowDefinition Height="4" />
-					<RowDefinition Height="*" />
+					<RowDefinition Height="2*" />
 				</Grid.RowDefinitions>
-				<ListView Name="MessagesList" ItemsSource="{Binding Topics}" SelectionChanged="MessagesSelectionChanged">
+				<ListView Name="MessagesList" ItemsSource="{Binding Topics}" SelectionChanged="MessageSelectionChanged">
 					<ListView.ItemTemplate>
 						<DataTemplate>
 							<TextBlock Text="{Binding Subject}" />
@@ -62,9 +59,7 @@
 					</ListView.ItemTemplate>
 				</ListView>
 				<GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" />
-				<Border Grid.Row="2" BorderThickness="1" BorderBrush="#FF888888">
-					<WebBrowser Name="MessageBrowser"/>
-				</Border>
+				<msgview:MessageView Grid.Row="2" Message="{Binding Message}"/>
 			</Grid>
 		</Grid>
 	</Grid>

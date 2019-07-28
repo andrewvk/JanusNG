@@ -1,9 +1,13 @@
 ﻿<Application x:Class="JanusNG.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:JanusNG"
+             xmlns:local="clr-namespace:Rsdn.JanusNG"
              StartupUri="Main/MainWindow.xaml">
-    <Application.Resources>
-         
-    </Application.Resources>
+	<Application.Resources>
+		<BooleanToVisibilityConverter x:Key="BoolConverter"/>
+		<local:GravatarConverter x:Key="GravatarConverterSmall" Size="32"/>
+		<local:GravatarConverter x:Key="GravatarConverterMedium" Size="64"/>
+		<local:GravatarConverter x:Key="GravatarConverterBig" Size="160"/>
+		<local:RateStringConverter x:Key="RateStringConverter"/>
+	</Application.Resources>
 </Application>

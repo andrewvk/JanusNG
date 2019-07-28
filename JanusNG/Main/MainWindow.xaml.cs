@@ -66,18 +66,13 @@ namespace Rsdn.JanusNG.Main
 				: null;
 		}
 
-		private async void MessagesSelectionChanged(object sender, SelectionChangedEventArgs e)
+		private async void MessageSelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			var msg = (MessageInfo) MessagesList.SelectedItem;
 			Model.Message =
 				msg != null
-				? await _rsdnClient
-					.Messages
-					.GetMessageAsync(msg.ID, withRates: true, withBodies: true, formatBody: true)
-				: null;
-			MessageBrowser.NavigateToString(
-				"<head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8'></head>"
-				+ Model.Message?.Body?.Text ?? " ");
+					? await _rsdnClient.Messages.GetMessageAsync(msg.ID, withRates: true, withBodies: true, formatBody: true)
+					: null;
 		}
 	}
 }
