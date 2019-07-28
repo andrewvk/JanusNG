@@ -2,15 +2,14 @@
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using Rsdn.Api.Models.Accounts;
-using Rsdn.Api.Models.Forums;
 using Rsdn.Api.Models.Messages;
 
 namespace Rsdn.JanusNG.Main
 {
 	public class MainModel : INotifyPropertyChanged
 	{
-		private ForumDescription[] _forums;
-		private MessageInfo[] _topics;
+		private ForumGroup[] _forums;
+		private TopicNode[] _topics;
 		private MessageInfo _message;
 		private bool _isSignedIn;
 		private AccountInfo _me;
@@ -38,7 +37,7 @@ namespace Rsdn.JanusNG.Main
 			}
 		}
 
-		public ForumDescription[] Forums
+		public ForumGroup[] Forums
 		{
 			[UsedImplicitly] get => _forums;
 			set
@@ -48,7 +47,7 @@ namespace Rsdn.JanusNG.Main
 			}
 		}
 
-		public MessageInfo[] Topics
+		public TopicNode[] Topics
 		{
 			get => _topics;
 			set

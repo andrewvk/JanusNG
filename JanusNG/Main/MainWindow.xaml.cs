@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -49,33 +50,86 @@ namespace Rsdn.JanusNG.Main
 		private async Task ReloadModel()
 		{
 			using (ForumsList.ApplyLoader())
-				Model.Forums = (await _rsdnClient.Forums.GetForumsAsync())
-					.OrderBy(f => f.Name)
-					.ToArray();
+				Model.Forums = await LoadForums();
 		}
 
-		private async void ForumsSelectionChanged(object sender, SelectionChangedEventArgs e)
+		private async void ForumsSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> routedPropertyChangedEventArgs)
 		{
-			var forum = (ForumDescription)ForumsList.SelectedItem;
-			using (MessagesList.ApplyLoader())
-				Model.Topics =
-					forum != null
-						? (await _rsdnClient.Messages.GetMessagesAsync(
-							limit: 100,
-							forumID: forum.ID,
-							onlyTopics: true))
-						.Items
-						: null;
+			switch (ForumsList.SelectedItem)
+			{
+				case ForumDescription f:
+					using (MessagesList.ApplyLoader())
+						Model.Topics = await LoadTopics(f.ID);
+					break;
+				default:
+					Model.Topics = null;
+					break;
+			}
 		}
 
-		private async void MessageSelectionChanged(object sender, SelectionChangedEventArgs e)
+		private async Task<TopicNode[]> LoadTopics(int forumID) =>
+			(await _rsdnClient.Messages.GetMessagesAsync(
+				limit: 100,
+				forumID: forumID,
+				onlyTopics: true))
+			.Items
+			.Select(m => new TopicNode
+			{
+				Message = m,
+				Children = new []{new MessageNode()}
+			})
+			.ToArray();
+
+		private async Task<ForumGroup[]> LoadForums() =>
+			(await _rsdnClient.Forums.GetForumsAsync())
+			.OrderBy(f => f.Name)
+			.GroupBy(
+				f => f.ForumGroup.ID,
+				f => f,
+				(gid, grp) =>
+				{
+					var res = new ForumGroup
+					{
+						Forums = grp.ToArray()
+					};
+					res.Name = res.Forums.First().Name;
+					return res;
+				})
+			.ToArray();
+
+		private async void MessageSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> routedPropertyChangedEventArgs)
 		{
-			var msg = (MessageInfo) MessagesList.SelectedItem;
+			var msg = (MessageNode)MessagesList.SelectedItem;
 			using (MessageView.ApplyLoader())
 				Model.Message =
-					msg != null
-						? await _rsdnClient.Messages.GetMessageAsync(msg.ID, withRates: true, withBodies: true, formatBody: true)
+					msg?.Message != null
+						? await _rsdnClient.Messages.GetMessageAsync(msg.Message.ID, withRates: true, withBodies: true, formatBody: true)
 						: null;
+		}
+
+		private async void TopicExpanded(object sender, RoutedEventArgs e)
+		{
+			if (!(((TreeViewItem)e.OriginalSource).Header is TopicNode topic) || topic.IsLoaded)
+				return;
+			var messageMap = (await _rsdnClient.Messages.GetMessagesAsync(topicID: topic.Message.ID))
+				.Items
+				.GroupBy(m => m.ParentID)
+				.ToDictionary(grp => grp.Key, grp => grp.ToArray());
+			topic.IsLoaded = true;
+			topic.Children = BuildTopicTree(messageMap, topic.Message.ID);
+		}
+
+		private MessageNode[] BuildTopicTree(Dictionary<int, MessageInfo[]> messageMap, int parentID)
+		{
+			if (!messageMap.TryGetValue(parentID, out var children))
+				return Array.Empty<MessageNode>();
+			return children
+				.Select(c => new MessageNode
+				{
+					Message = c,
+					Children = BuildTopicTree(messageMap, c.ID)
+				})
+				.ToArray();
 		}
 	}
 }

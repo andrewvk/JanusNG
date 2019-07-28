@@ -37,13 +37,23 @@
 				<ColumnDefinition Width="4" />
 				<ColumnDefinition Width="3*" />
 			</Grid.ColumnDefinitions>
-			<ListView Name="ForumsList" ItemsSource="{Binding Forums}" SelectionChanged="ForumsSelectionChanged">
-				<ListView.ItemTemplate>
-					<DataTemplate>
-						<TextBlock Text="{Binding Name}" />
-					</DataTemplate>
-				</ListView.ItemTemplate>
-			</ListView>
+			<TreeView Name="ForumsList" ItemsSource="{Binding Forums}" SelectedItemChanged="ForumsSelectionChanged">
+				<TreeView.ItemContainerStyle>
+					<Style TargetType="{x:Type TreeViewItem}">
+						<Setter Property="IsExpanded" Value="True"/>
+					</Style>
+				</TreeView.ItemContainerStyle>
+				<TreeView.ItemTemplate>
+					<HierarchicalDataTemplate ItemsSource="{Binding Forums}">
+						<TextBlock Text="{Binding Name}" FontWeight="DemiBold"/>
+						<HierarchicalDataTemplate.ItemTemplate>
+							<DataTemplate>
+								<TextBlock Text="{Binding Name}"/>
+							</DataTemplate>
+						</HierarchicalDataTemplate.ItemTemplate>
+					</HierarchicalDataTemplate>
+				</TreeView.ItemTemplate>
+			</TreeView>
 			<GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
 			<Grid Grid.Column="2">
 				<Grid.RowDefinitions>
@@ -51,13 +61,22 @@
 					<RowDefinition Height="4" />
 					<RowDefinition Height="2*" />
 				</Grid.RowDefinitions>
-				<ListView Name="MessagesList" ItemsSource="{Binding Topics}" SelectionChanged="MessageSelectionChanged">
-					<ListView.ItemTemplate>
-						<DataTemplate>
-							<TextBlock Text="{Binding Subject}" />
-						</DataTemplate>
-					</ListView.ItemTemplate>
-				</ListView>
+				<TreeView Name="MessagesList" ItemsSource="{Binding Topics}" SelectedItemChanged="MessageSelectionChanged"
+				          TreeViewItem.Expanded="TopicExpanded">
+					<TreeView.ItemTemplate>
+						<HierarchicalDataTemplate ItemsSource="{Binding Children}">
+							<StackPanel Orientation="Horizontal">
+								<Image Width="16" Height="16" Margin="2" Stretch="None"
+								       Source="{Binding Message.Author.GravatarHash, Converter={StaticResource GravatarConverterInline}, IsAsync=True}">
+									<Image.Clip>
+										<EllipseGeometry RadiusX="8" RadiusY="8" Center="8, 8"/>
+									</Image.Clip>
+								</Image>
+								<TextBlock Text="{Binding Message.Subject}" />
+							</StackPanel>
+						</HierarchicalDataTemplate>
+					</TreeView.ItemTemplate>
+				</TreeView>
 				<GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" />
 				<msgview:MessageView x:Name="MessageView" Grid.Row="2" Message="{Binding Message}"/>
 			</Grid>

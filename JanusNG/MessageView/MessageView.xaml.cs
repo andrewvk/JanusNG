@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using System.Windows.Navigation;
 using Rsdn.Api.Models.Messages;
 using Rsdn.Framework.Formatting.Resources;
 
