@@ -73,6 +73,9 @@
 									</Image.Clip>
 								</Image>
 								<TextBlock Text="{Binding Message.Subject}" />
+								<TextBlock Text="("/>
+								<TextBlock Text="{Binding Message.AnswersCount}"/>
+								<TextBlock Text=")"/>
 							</StackPanel>
 						</HierarchicalDataTemplate>
 					</TreeView.ItemTemplate>

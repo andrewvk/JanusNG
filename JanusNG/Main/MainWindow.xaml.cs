@@ -60,26 +60,13 @@ namespace Rsdn.JanusNG.Main
 				case ForumDescription f:
 					using (MessagesList.ApplyLoader())
 						Model.Topics = await LoadTopics(f.ID);
+					//var m = Model.Topics.Max(t => t.Message.AnswersCount);
 					break;
 				default:
 					Model.Topics = null;
 					break;
 			}
 		}
-
-		private async Task<TopicNode[]> LoadTopics(int forumID) =>
-			(await _rsdnClient.Messages.GetMessagesAsync(
-				limit: 100,
-				forumID: forumID,
-				onlyTopics: true))
-			.Items
-			.Select(m => new TopicNode
-			{
-				Message = m,
-				IsLoaded = m.AnswersCount == 0,
-				Children = m.AnswersCount != 0 ? new []{new MessageNode()} : Array.Empty<MessageNode>()
-			})
-			.ToArray();
 
 		private async Task<ForumGroup[]> LoadForums() =>
 			(await _rsdnClient.Forums.GetForumsAsync())
@@ -93,9 +80,23 @@ namespace Rsdn.JanusNG.Main
 					{
 						Forums = grp.ToArray()
 					};
-					res.Name = res.Forums.First().Name;
+					res.Name = res.Forums.First().ForumGroup.Name;
 					return res;
 				})
+			.ToArray();
+
+		private async Task<TopicNode[]> LoadTopics(int forumID) =>
+			(await _rsdnClient.Messages.GetMessagesAsync(
+				limit: 50,
+				forumID: forumID,
+				onlyTopics: true))
+			.Items
+			.Select(m => new TopicNode
+			{
+				Message = m,
+				IsLoaded = m.AnswersCount == 0,
+				Children = m.AnswersCount != 0 ? new []{new MessageNode()} : Array.Empty<MessageNode>()
+			})
 			.ToArray();
 
 		private async void MessageSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> routedPropertyChangedEventArgs)
