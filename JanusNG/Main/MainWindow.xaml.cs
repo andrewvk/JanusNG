@@ -78,18 +78,22 @@ namespace Rsdn.JanusNG.Main
 				{
 					var res = new ForumGroup
 					{
-						Forums = grp.ToArray()
+						Forums = grp.ToArray(),
 					};
-					res.Name = res.Forums.First().ForumGroup.Name;
+					var fg = res.Forums.First().ForumGroup;
+					res.Name = fg.Name;
+					res.SortOrder = fg.SortOrder;
 					return res;
 				})
+			.OrderBy(g => g.SortOrder)
 			.ToArray();
 
 		private async Task<TopicNode[]> LoadTopics(int forumID) =>
 			(await _rsdnClient.Messages.GetMessagesAsync(
 				limit: 50,
 				forumID: forumID,
-				onlyTopics: true))
+				onlyTopics: true,
+				withRates: true))
 			.Items
 			.Select(m => new TopicNode
 			{
@@ -118,18 +122,20 @@ namespace Rsdn.JanusNG.Main
 				.GroupBy(m => m.ParentID)
 				.ToDictionary(grp => grp.Key, grp => grp.ToArray());
 			topic.IsLoaded = true;
-			topic.Children = BuildTopicTree(messageMap, topic.Message.ID);
+			topic.Children = BuildTopicTree(messageMap, topic.Message.ID, 0);
 		}
 
-		private MessageNode[] BuildTopicTree(Dictionary<int, MessageInfo[]> messageMap, int parentID)
+		private MessageNode[] BuildTopicTree(Dictionary<int, MessageInfo[]> messageMap, int parentID, int level)
 		{
 			if (!messageMap.TryGetValue(parentID, out var children))
 				return Array.Empty<MessageNode>();
+			level += 1;
 			return children
 				.Select(c => new MessageNode
 				{
 					Message = c,
-					Children = BuildTopicTree(messageMap, c.ID)
+					Children = BuildTopicTree(messageMap, c.ID, level),
+					Level = level
 				})
 				.ToArray();
 		}

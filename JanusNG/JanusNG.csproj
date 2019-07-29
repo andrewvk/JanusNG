@@ -5,6 +5,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <RootNamespace>Rsdn.JanusNG</RootNamespace>
+    <ApplicationIcon>rsdn_at_home.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

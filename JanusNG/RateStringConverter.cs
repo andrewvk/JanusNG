@@ -15,7 +15,7 @@ namespace Rsdn.JanusNG
 			if (targetType != typeof(string))
 				throw new NotSupportedException();
 			if (!(value is MessageRates rates))
-				throw new NotSupportedException();
+				return "";
 
 			IEnumerable<string> GetRateStrings()
 			{

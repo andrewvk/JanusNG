@@ -43,7 +43,8 @@ namespace Rsdn.JanusNG.MessageView
 		private void RatesClick(object sender, MouseButtonEventArgs e)
 		{
 			var wnd = new RatesWindow(Message.Rates);
-			wnd.Show();
+			wnd.Owner = Window.GetWindow(this);
+			wnd.ShowDialog();
 		}
 	}
 }
