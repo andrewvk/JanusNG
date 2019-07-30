@@ -6,7 +6,7 @@
         xmlns:localmain="clr-namespace:Rsdn.JanusNG.Main"
         xmlns:msgview="clr-namespace:Rsdn.JanusNG.MessageView"
         mc:Ignorable="d"
-        Title="RSDN@Home" Height="900" Width="1200"
+        Title="RSDN@Home" Height="900" Width="1400"
         Loaded="WindowLoaded">
 	<Window.DataContext>
 		<localmain:MainModel x:Name="Model" />
@@ -63,15 +63,28 @@
 				</Grid.RowDefinitions>
 				<Border Grid.IsSharedSizeScope="True">
 					<Border.Resources>
-						<Style x:Key="TextBlockStyle" TargetType="{x:Type TextBlock}">
+						<localmain:ReplyCountConverter x:Key="ReplyCountConv"/>
+						<Style x:Key="ReadStyle" TargetType="{x:Type TextBlock}">
 							<Setter Property="Margin" Value="3 0 3 0"/>
 						</Style>
-						<Style x:Key="TextBlockBoldStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource TextBlockStyle}">
+						<Style x:Key="UnreadStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource ReadStyle}">
 							<Setter Property="FontWeight" Value="Bold"/>
 						</Style>
+						<Style x:Key="RepliesUnreadStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource ReadStyle}">
+							<Setter Property="FontWeight" Value="DemiBold"/>
+						</Style>
+						<localmain:MessageRowStyleConverter x:Key="RowStyleConverter"
+						                                    ReadStyle="{StaticResource ReadStyle}"
+						                                    UnreadStyle="{StaticResource UnreadStyle}"
+						                                    RepliesUnreadStyle="{StaticResource RepliesUnreadStyle}"/>
 					</Border.Resources>
 					<TreeView Name="MessagesList" ItemsSource="{Binding Topics}" SelectedItemChanged="MessageSelectionChanged"
 					          TreeViewItem.Expanded="TopicExpanded">
+						<TreeView.ItemContainerStyle>
+							<Style TargetType="TreeViewItem">
+								<Setter Property="Margin" Value="-8,0,0,0"/>
+							</Style>
+						</TreeView.ItemContainerStyle>
 						<TreeView.ItemTemplate>
 							<HierarchicalDataTemplate ItemsSource="{Binding Children}">
 								<Grid>
@@ -82,7 +95,14 @@
 										<ColumnDefinition SharedSizeGroup="Rates" Width="Auto"/>
 										<ColumnDefinition SharedSizeGroup="CreatedOn" Width="Auto"/>
 									</Grid.ColumnDefinitions>
-									<TextBlock Text="{Binding Message.Subject}" Style="{StaticResource TextBlockStyle}" />
+									<TextBlock Text="{Binding Message.Subject}">
+										<TextBlock.Style>
+											<MultiBinding Converter="{StaticResource RowStyleConverter}">
+												<Binding Path="IsRead"/>
+												<Binding Path="TopicUnreadCount"/>
+											</MultiBinding>
+										</TextBlock.Style>
+									</TextBlock>
 									<StackPanel Grid.Column="1" Orientation="Horizontal">
 										<Image Width="16" Height="16" Margin="2" Stretch="None"
 										       Source="{Binding Message.Author.GravatarHash, Converter={StaticResource GravatarConverterInline}, IsAsync=True}">
@@ -90,14 +110,15 @@
 												<EllipseGeometry RadiusX="8" RadiusY="8" Center="8, 8"/>
 											</Image.Clip>
 										</Image>
-										<TextBlock Text="{Binding Message.Author.DisplayName}" Style="{StaticResource TextBlockStyle}" />
+										<TextBlock Text="{Binding Message.Author.DisplayName}"
+										           Style="{StaticResource ReadStyle}"/>
 									</StackPanel>
-									<TextBlock Grid.Column="2" Text="{Binding Message.AnswersCount}" Style="{StaticResource TextBlockStyle}" 
-									           TextAlignment="Right"/>
+									<TextBlock Grid.Column="2" Text="{Binding Message, Converter={StaticResource ReplyCountConv}}"
+									           TextAlignment="Right" Style="{StaticResource ReadStyle}"/>
 									<TextBlock Grid.Column="3" Text="{Binding Message.Rates, Converter={StaticResource RateStringConverter}}"
-									           Style="{StaticResource TextBlockStyle}" />
+									           Style="{StaticResource ReadStyle}"/>
 									<TextBlock Grid.Column="4" Text="{Binding Message.CreatedOn, StringFormat=g}" TextAlignment="Right"
-									           Style="{StaticResource TextBlockStyle}" />
+									           Style="{StaticResource ReadStyle}"/>
 								</Grid>
 							</HierarchicalDataTemplate>
 						</TreeView.ItemTemplate>

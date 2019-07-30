@@ -93,13 +93,16 @@ namespace Rsdn.JanusNG.Main
 				limit: 50,
 				forumID: forumID,
 				onlyTopics: true,
-				withRates: true))
+				withRates: true,
+				withReadMarks: true))
 			.Items
 			.Select(m => new TopicNode
 			{
 				Message = m,
 				IsLoaded = m.AnswersCount == 0,
-				Children = m.AnswersCount != 0 ? new []{new MessageNode()} : Array.Empty<MessageNode>()
+				Children = m.AnswersCount != 0 ? new []{new MessageNode()} : Array.Empty<MessageNode>(),
+				IsRead = m.IsRead,
+				TopicUnreadCount = m.TopicUnreadCount.GetValueOrDefault()
 			})
 			.ToArray();
 
@@ -111,21 +114,25 @@ namespace Rsdn.JanusNG.Main
 					msg?.Message != null
 						? await _rsdnClient.Messages.GetMessageAsync(msg.Message.ID, withRates: true, withBodies: true, formatBody: true)
 						: null;
+			if (Model.IsSignedIn && Model.Message?.IsRead != true)
+#pragma warning disable CS4014
+				Task.Run(() => MarkMessageRead(msg));
+#pragma warning restore CS4014
 		}
 
 		private async void TopicExpanded(object sender, RoutedEventArgs e)
 		{
 			if (!(((TreeViewItem)e.OriginalSource).Header is TopicNode topic) || topic.IsLoaded)
 				return;
-			var messageMap = (await _rsdnClient.Messages.GetMessagesAsync(topicID: topic.Message.ID))
+			var messageMap = (await _rsdnClient.Messages.GetMessagesAsync(topicID: topic.Message.ID, withRates: true, withReadMarks: true))
 				.Items
 				.GroupBy(m => m.ParentID)
 				.ToDictionary(grp => grp.Key, grp => grp.ToArray());
+			topic.Children = BuildTopicTree(messageMap, topic.Message.ID, 0, topic);
 			topic.IsLoaded = true;
-			topic.Children = BuildTopicTree(messageMap, topic.Message.ID, 0);
 		}
 
-		private MessageNode[] BuildTopicTree(Dictionary<int, MessageInfo[]> messageMap, int parentID, int level)
+		private MessageNode[] BuildTopicTree(Dictionary<int, MessageInfo[]> messageMap, int parentID, int level, TopicNode topicNode)
 		{
 			if (!messageMap.TryGetValue(parentID, out var children))
 				return Array.Empty<MessageNode>();
@@ -134,10 +141,28 @@ namespace Rsdn.JanusNG.Main
 				.Select(c => new MessageNode
 				{
 					Message = c,
-					Children = BuildTopicTree(messageMap, c.ID, level),
-					Level = level
+					Children = BuildTopicTree(messageMap, c.ID, level, topicNode),
+					Level = level,
+					IsRead = c.IsRead,
+					TopicNode = topicNode
 				})
 				.ToArray();
+		}
+
+		private async Task MarkMessageRead(MessageNode msg)
+		{
+			if (msg.IsRead != false)
+				return;
+			await Task.Delay(TimeSpan.FromSeconds(3));
+			if (Model.Message.ID != msg.Message.ID) // another message selected
+				return;
+			await _rsdnClient
+				.ReadMarks
+				.AddReadMarksAsync(new[] {msg.Message.ID});
+			msg.IsRead = true;
+			if (msg.TopicNode != null)
+				lock (msg.TopicNode)
+					msg.TopicNode.TopicUnreadCount = msg.TopicNode.TopicUnreadCount - 1;
 		}
 	}
 }
