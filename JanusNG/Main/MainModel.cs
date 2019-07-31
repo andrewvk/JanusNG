@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using Rsdn.Api.Models.Accounts;
 using Rsdn.Api.Models.Messages;
+using Rsdn.JanusNG.Services.Connection;
 
 namespace Rsdn.JanusNG.Main
 {
@@ -11,19 +12,33 @@ namespace Rsdn.JanusNG.Main
 		private ForumGroup[] _forums;
 		private TopicNode[] _topics;
 		private MessageInfo _message;
-		private bool _isSignedIn;
 		private AccountInfo _me;
+		private Account _currentAccount;
+		private Account[] _accounts;
 
-		public bool IsSignedIn
+		public Account CurrentAccount
 		{
-			get => _isSignedIn;
+			get => _currentAccount;
 			set
 			{
-				_isSignedIn = value;
+				_currentAccount = value;
+				OnPropertyChanged(nameof(CurrentAccount));
 				OnPropertyChanged(nameof(IsSignedIn));
 				OnPropertyChanged(nameof(IsNotSignedIn));
 			}
 		}
+
+		public Account[] Accounts
+		{
+			get => _accounts;
+			set
+			{
+				_accounts = value;
+				OnPropertyChanged(nameof(Accounts));
+			}
+		}
+
+		public bool IsSignedIn => CurrentAccount != null;
 
 		public bool IsNotSignedIn => !IsSignedIn;
 

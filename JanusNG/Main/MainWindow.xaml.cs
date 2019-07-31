@@ -4,10 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using JanusNG;
 using Rsdn.Api.Models.Forums;
 using Rsdn.Api.Models.Messages;
-using Rsdn.ApiClient;
+using Rsdn.JanusNG.Services.Connection;
 
 namespace Rsdn.JanusNG.Main
 {
@@ -16,29 +15,29 @@ namespace Rsdn.JanusNG.Main
 	/// </summary>
 	public partial class MainWindow
 	{
-		private static readonly Uri _rsdnUri = new Uri("https://api.rsdn.org");
+		private readonly ApiConnectionService _api;
+		private readonly AccountsService _accountsService;
 
-		private RsdnApiClient _rsdnClient;
-
-		public MainWindow()
+		public MainWindow(ApiConnectionService api, AccountsService accountsService)
 		{
+			_api = api;
+			_accountsService = accountsService;
 			InitializeComponent();
-			_rsdnClient = RsdnClientHelpers.CreateAnonymousClient(_rsdnUri);
+			Model.Accounts = _accountsService.GetAccounts();
+			Model.CurrentAccount = _accountsService.GetCurrentAccount();
 		}
 
 		private async void SignInClick(object sender, RoutedEventArgs e)
 		{
-			var tokenFactory = await RsdnSignIn.SignInAsync();
-			_rsdnClient = RsdnClientHelpers.CreateClient(_rsdnUri, tokenFactory);
-			Model.Me = await _rsdnClient.Accounts.GetMeAsync();
-
+			var acc = await _api.SignInAsync();
 			// Bring to front
 			Activate();
 			Topmost = true;  // important
 			Topmost = false; // important
 			Focus();
 
-			Model.IsSignedIn = true;
+			Model.CurrentAccount = acc;
+			Model.Accounts = _accountsService.GetAccounts();
 			await ReloadModel();
 		}
 
@@ -49,8 +48,21 @@ namespace Rsdn.JanusNG.Main
 
 		private async Task ReloadModel()
 		{
+			var selectedForumID = (ForumsList.SelectedItem as ForumDescription)?.ID;
+			await RefreshForumsAsync();
+			if (selectedForumID != null)
+			{
+				var forum = Model.Forums.SelectMany(fg => fg.Forums).FirstOrDefault(f => f.ID == selectedForumID);
+				if (forum != null)
+					if (ForumsList.ItemContainerGenerator.ContainerFromItem(forum) is TreeViewItem tvi)
+						tvi.IsSelected = true;
+			}
+		}
+
+		private async Task RefreshForumsAsync()
+		{
 			using (ForumsList.ApplyLoader())
-				Model.Forums = await LoadForums();
+				Model.Forums = await LoadForumsAsync();
 		}
 
 		private async void ForumsSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> routedPropertyChangedEventArgs)
@@ -68,8 +80,8 @@ namespace Rsdn.JanusNG.Main
 			}
 		}
 
-		private async Task<ForumGroup[]> LoadForums() =>
-			(await _rsdnClient.Forums.GetForumsAsync())
+		private async Task<ForumGroup[]> LoadForumsAsync() =>
+			(await _api.Client.Forums.GetForumsAsync())
 			.OrderBy(f => f.Name)
 			.GroupBy(
 				f => f.ForumGroup.ID,
@@ -89,7 +101,7 @@ namespace Rsdn.JanusNG.Main
 			.ToArray();
 
 		private async Task<TopicNode[]> LoadTopics(int forumID) =>
-			(await _rsdnClient.Messages.GetMessagesAsync(
+			(await _api.Client.Messages.GetMessagesAsync(
 				limit: 50,
 				forumID: forumID,
 				onlyTopics: true,
@@ -112,7 +124,7 @@ namespace Rsdn.JanusNG.Main
 			using (MessageView.ApplyLoader())
 				Model.Message =
 					msg?.Message != null
-						? await _rsdnClient.Messages.GetMessageAsync(msg.Message.ID, withRates: true, withBodies: true, formatBody: true)
+						? await _api.Client.Messages.GetMessageAsync(msg.Message.ID, withRates: true, withBodies: true, formatBody: true)
 						: null;
 			if (Model.IsSignedIn && Model.Message?.IsRead != true)
 #pragma warning disable CS4014
@@ -124,7 +136,7 @@ namespace Rsdn.JanusNG.Main
 		{
 			if (!(((TreeViewItem)e.OriginalSource).Header is TopicNode topic) || topic.IsLoaded)
 				return;
-			var messageMap = (await _rsdnClient.Messages.GetMessagesAsync(topicID: topic.Message.ID, withRates: true, withReadMarks: true))
+			var messageMap = (await _api.Client.Messages.GetMessagesAsync(topicID: topic.Message.ID, withRates: true, withReadMarks: true))
 				.Items
 				.GroupBy(m => m.ParentID)
 				.ToDictionary(grp => grp.Key, grp => grp.ToArray());
@@ -132,7 +144,11 @@ namespace Rsdn.JanusNG.Main
 			topic.IsLoaded = true;
 		}
 
-		private MessageNode[] BuildTopicTree(Dictionary<int, MessageInfo[]> messageMap, int parentID, int level, TopicNode topicNode)
+		private static MessageNode[] BuildTopicTree(
+			IReadOnlyDictionary<int, MessageInfo[]> messageMap,
+			int parentID,
+			int level,
+			TopicNode topicNode)
 		{
 			if (!messageMap.TryGetValue(parentID, out var children))
 				return Array.Empty<MessageNode>();
@@ -156,13 +172,28 @@ namespace Rsdn.JanusNG.Main
 			await Task.Delay(TimeSpan.FromSeconds(3));
 			if (Model.Message.ID != msg.Message.ID) // another message selected
 				return;
-			await _rsdnClient
+			await _api
+				.Client
 				.ReadMarks
 				.AddReadMarksAsync(new[] {msg.Message.ID});
 			msg.IsRead = true;
 			if (msg.TopicNode != null)
 				lock (msg.TopicNode)
 					msg.TopicNode.TopicUnreadCount = msg.TopicNode.TopicUnreadCount - 1;
+		}
+
+		private async void SignOutClick(object sender, RoutedEventArgs e)
+		{
+			_api.SignOut();
+			Model.CurrentAccount = null;
+			await RefreshForumsAsync();
+		}
+
+		private async void AccountClicked(object sender, RoutedEventArgs e)
+		{
+			var account = (Account) ((MenuItem) sender).DataContext;
+			Model.CurrentAccount = _api.UseStoredAccount(account.ID);
+			await RefreshForumsAsync();
 		}
 	}
 }

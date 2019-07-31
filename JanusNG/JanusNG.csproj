@@ -9,9 +9,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="anonymous.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CodeJam" Version="2.2.1" />
     <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" />
-    <PackageReference Include="Rsdn.ApiClient" Version="0.0.1-alpha5" />
+    <PackageReference Include="LiteDB" Version="4.1.4" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.0-preview7.19362.4" />
+    <PackageReference Include="Rsdn.ApiClient" Version="0.0.1-alpha6" />
     <PackageReference Include="Rsdn.Framework.Formatting" Version="5.0.1" />
+    <PackageReference Include="System.Windows.Interactivity.WPF" Version="2.0.20525" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="anonymous.png" />
   </ItemGroup>
 
 </Project>

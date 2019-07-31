@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:localmain="clr-namespace:Rsdn.JanusNG.Main"
         xmlns:msgview="clr-namespace:Rsdn.JanusNG.MessageView"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         mc:Ignorable="d"
         Title="RSDN@Home" Height="900" Width="1400"
         Loaded="WindowLoaded">
@@ -19,17 +20,75 @@
 			<RowDefinition />
 		</Grid.RowDefinitions>
 		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-			<Button Click="SignInClick" Margin="8" Visibility="{Binding IsNotSignedIn, Converter={StaticResource BoolConverter}}">
-				Sign In
-			</Button>
-			<StackPanel Visibility="{Binding IsSignedIn, Converter={StaticResource BoolConverter}}" Orientation="Horizontal" Margin="4">
-				<Ellipse Width="32" Height="32" Margin="4">
-					<Ellipse.Fill>
-						<ImageBrush ImageSource="{Binding Me.GravatarHash, Converter={StaticResource GravatarConverterSmall}}" />
-					</Ellipse.Fill>
-				</Ellipse>
-				<TextBlock Text="{Binding Me.DisplayName}" VerticalAlignment="Center"/>
+			<StackPanel Orientation="Horizontal" Height="38">
+				<StackPanel Orientation="Horizontal" Visibility="{Binding IsSignedIn, Converter={StaticResource BoolConverter}}">
+					<Image Source="{Binding CurrentAccount.GravatarHash, Converter={StaticResource GravatarConverterMedium}}"
+					       SnapsToDevicePixels="True" Height="32" Width="32" Margin="3, 3, 6, 3">
+						<Image.Clip>
+							<EllipseGeometry RadiusX="16" RadiusY="16" Center="16, 16"/>
+						</Image.Clip>
+					</Image>
+					<TextBlock Text="{Binding CurrentAccount.DisplayName}" VerticalAlignment="Center"/>
+				</StackPanel>
+				<Button Visibility="{Binding IsNotSignedIn, Converter={StaticResource BoolConverter}}" Click="SignInClick"
+				        Background="Transparent" BorderBrush="Transparent">
+					<StackPanel Orientation="Horizontal">
+						<Image Width="32" Height="32" Source="../anonymous.png"/>
+						<TextBlock Text="Sign In" VerticalAlignment="Center"/>
+					</StackPanel>
+				</Button>
 			</StackPanel>
+			<Button Background="Transparent" BorderBrush="Transparent" Height="38">
+				<i:Interaction.Behaviors>
+					<localmain:DropDownButtonBehavior/>
+				</i:Interaction.Behaviors>
+				<Button.Content>
+					<Path Margin="6, 2, 6, 2" VerticalAlignment="Center" Width="6" Fill="#FF527DB5" Stretch="Uniform"
+					      HorizontalAlignment="Right"
+					      Data="F1 M 301.14,-189.041L 311.57,-189.041L 306.355,-182.942L 301.14,-189.041 Z "/>
+				</Button.Content>
+				<Button.ContextMenu>
+					<ContextMenu>
+						<MenuItem Header="Accounts" ItemsSource="{Binding Accounts}">
+							<MenuItem.ItemContainerStyle>
+								<Style>
+									<Setter Property="MenuItem.Icon">
+										<Setter.Value>
+											<Image Source="{Binding GravatarHash, Converter={StaticResource GravatarConverterSmall}}">
+												<Image.Clip>
+													<EllipseGeometry RadiusX="8" RadiusY="8" Center="8, 8"/>
+												</Image.Clip>
+											</Image>
+										</Setter.Value>
+									</Setter>
+									<EventSetter Event="MenuItem.Click" Handler="AccountClicked"/>
+								</Style>
+							</MenuItem.ItemContainerStyle>
+							<MenuItem.ItemTemplate>
+								<DataTemplate>
+									<TextBlock Text="{Binding DisplayName}"/>
+								</DataTemplate>
+								<!--<Style>
+									 --><!--ReSharper disable once Xaml.BindingWithContextNotResolved--><!-- 
+									<Setter Property="MenuItem.Header" Value="{Binding DisplayName}"/>
+									<Setter Property="MenuItem.Icon">
+										<Setter.Value>
+											<Image Source="{Binding GravatarHash, Converter={StaticResource GravatarConverterSmall}}">
+												<Image.Clip>
+													<EllipseGeometry RadiusX="8" RadiusY="8" Center="8, 8"/>
+												</Image.Clip>
+											</Image>
+										</Setter.Value>
+									</Setter>
+								</Style>-->
+							</MenuItem.ItemTemplate>
+						</MenuItem>
+						<Separator/>
+						<MenuItem Header="Sign Out" Click="SignOutClick"
+						          Visibility="{Binding IsSignedIn, Converter={StaticResource BoolConverter}}"/>
+					</ContextMenu>
+				</Button.ContextMenu>
+			</Button>
 		</StackPanel>
 		<Grid Grid.Row="1">
 			<Grid.ColumnDefinitions>

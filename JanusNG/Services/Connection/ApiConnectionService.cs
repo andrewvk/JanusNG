@@ -7,28 +7,55 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Rsdn.Api.Models.Auth;
 using Rsdn.ApiClient;
+using Rsdn.ApiClient.Auth;
 
-namespace JanusNG
+namespace Rsdn.JanusNG.Services.Connection
 {
-	public static class RsdnSignIn
+	public class ApiConnectionService
 	{
-		public static async Task<TokenFactory> SignInAsync(CancellationToken cancellation = default)
+		private readonly AccountsService _accountsService;
+		private static readonly Uri _rsdnUri = new Uri("https://api.rsdn.org");
+		private readonly RsdnApiAuthenticator _authenticator;
+		private AuthTokenResponse _token;
+
+		public RsdnApiClient Client { get; }
+
+		public ApiConnectionService(AccountsService accountsService)
 		{
-			var port = GetFreeTcpPort();
-			var redirectUri = $"http://127.0.0.1:{port}/";
-			var authenticator = RsdnClientHelpers.CreateAuthenticator(
+			_accountsService = accountsService;
+
+			_authenticator = RsdnClientHelpers.CreateAuthenticator(
 				//new Uri("https://localhost:44389"),
-				new Uri("https://api.rsdn.org"),
+				_rsdnUri,
 				"test_public_client",
 				"",
 				"offline_access");
+			_token = _accountsService.GetCurrentToken();
+			Client = RsdnClientHelpers.CreateClient(
+				_rsdnUri,
+				_authenticator.GetAccessTokenFactory(
+					() => _token,
+					token =>
+					{
+						accountsService.SetCurrentToken(token);
+						_token = token;
+					}));
+		}
+
+		#region SignIn
+
+		public async Task<Account> SignInAsync(CancellationToken cancellation = default)
+		{
+			var port = GetFreeTcpPort();
+			var redirectUri = $"http://127.0.0.1:{port}/";
 			{
 				using var httpListener = new HttpListener();
 				httpListener.Prefixes.Add(redirectUri);
 				httpListener.Start();
 
-				var flowData = authenticator.GetCodeFlowData(redirectUri);
+				var flowData = _authenticator.GetCodeFlowData(redirectUri);
 				OpenBrowser(flowData.AuthUri);
 
 				var context = await httpListener.GetContextAsync();
@@ -41,22 +68,43 @@ namespace JanusNG
 					buffer,
 					0,
 					buffer.Length,
-					cancellation);
+					default);
 
-				await responseOutput.FlushAsync(cancellation);
+				await responseOutput.FlushAsync(default);
 				responseOutput.Close();
-				await Task.Delay(500, cancellation); // Wait for browser to get all data
+				await Task.Delay(500, default); // Wait for browser to get all data
 				httpListener.Stop();
 
 				var qs = context.Request.QueryString;
 				var redirectParams = qs.AllKeys.ToDictionary(key => key, key => qs[key]);
 
-				// Store token in closure.
-				// Actual implementation should use ProtectedData or Windows Credentials Manager to store token on
-				// persistent storage
-				var token = await authenticator.GetTokenByCodeAsync(flowData, redirectParams, cancellation);
-				return authenticator.GetAccessTokenFactory(() => token, t => token = t);
+				_token = await _authenticator.GetTokenByCodeAsync(flowData, redirectParams, cancellation);
+
+				var account = await Client.Accounts.GetMeAsync(cancellation);
+				var localAccount = new Account
+				{
+					ID = account.ID,
+					DisplayName = account.DisplayName,
+					GravatarHash = account.GravatarHash
+				};
+				_accountsService.AddOrUpdateAccount(localAccount, _token);
+				return localAccount;
 			}
+		}
+
+		public void SignOut()
+		{
+			_token = null;
+			_accountsService.ResetCurrentAccount();
+		}
+
+		public Account UseStoredAccount(int id)
+		{
+			_token = null;
+			var (newAcc, newToken) = _accountsService.SetCurrentAccount(id);
+			if (newAcc != null)
+				_token = newToken;
+			return newAcc;
 		}
 
 		private static int GetFreeTcpPort()
@@ -90,5 +138,6 @@ namespace JanusNG
 					throw;
 			}
 		}
+		#endregion
 	}
 }
