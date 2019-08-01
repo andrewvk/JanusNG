@@ -6,6 +6,7 @@
         xmlns:localmain="clr-namespace:Rsdn.JanusNG.Main"
         xmlns:msgview="clr-namespace:Rsdn.JanusNG.MessageView"
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:controls="clr-namespace:Rsdn.JanusNG.Controls"
         mc:Ignorable="d"
         Title="RSDN@Home" Height="900" Width="1400"
         Loaded="WindowLoaded">
@@ -22,12 +23,7 @@
 		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
 			<StackPanel Orientation="Horizontal" Height="38">
 				<StackPanel Orientation="Horizontal" Visibility="{Binding IsSignedIn, Converter={StaticResource BoolConverter}}">
-					<Image Source="{Binding CurrentAccount.GravatarHash, Converter={StaticResource GravatarConverterMedium}}"
-					       SnapsToDevicePixels="True" Height="32" Width="32" Margin="3, 3, 6, 3">
-						<Image.Clip>
-							<EllipseGeometry RadiusX="16" RadiusY="16" Center="16, 16"/>
-						</Image.Clip>
-					</Image>
+					<controls:Gravatar Size="32" Hash="{Binding CurrentAccount.GravatarHash}" Margin="3, 3, 8, 3"/>
 					<TextBlock Text="{Binding CurrentAccount.DisplayName}" VerticalAlignment="Center"/>
 				</StackPanel>
 				<Button Visibility="{Binding IsNotSignedIn, Converter={StaticResource BoolConverter}}" Click="SignInClick"
@@ -50,37 +46,13 @@
 				<Button.ContextMenu>
 					<ContextMenu>
 						<MenuItem Header="Accounts" ItemsSource="{Binding Accounts}">
-							<MenuItem.ItemContainerStyle>
-								<Style>
-									<Setter Property="MenuItem.Icon">
-										<Setter.Value>
-											<Image Source="{Binding GravatarHash, Converter={StaticResource GravatarConverterSmall}}">
-												<Image.Clip>
-													<EllipseGeometry RadiusX="8" RadiusY="8" Center="8, 8"/>
-												</Image.Clip>
-											</Image>
-										</Setter.Value>
-									</Setter>
-									<EventSetter Event="MenuItem.Click" Handler="AccountClicked"/>
-								</Style>
-							</MenuItem.ItemContainerStyle>
 							<MenuItem.ItemTemplate>
 								<DataTemplate>
-									<TextBlock Text="{Binding DisplayName}"/>
+									<StackPanel Orientation="Horizontal">
+										<controls:Gravatar Size="16" Hash="{Binding GravatarHash}"/>
+										<TextBlock Text="{Binding DisplayName}"/>
+									</StackPanel>
 								</DataTemplate>
-								<!--<Style>
-									 --><!--ReSharper disable once Xaml.BindingWithContextNotResolved--><!-- 
-									<Setter Property="MenuItem.Header" Value="{Binding DisplayName}"/>
-									<Setter Property="MenuItem.Icon">
-										<Setter.Value>
-											<Image Source="{Binding GravatarHash, Converter={StaticResource GravatarConverterSmall}}">
-												<Image.Clip>
-													<EllipseGeometry RadiusX="8" RadiusY="8" Center="8, 8"/>
-												</Image.Clip>
-											</Image>
-										</Setter.Value>
-									</Setter>
-								</Style>-->
 							</MenuItem.ItemTemplate>
 						</MenuItem>
 						<Separator/>
@@ -163,12 +135,7 @@
 										</TextBlock.Style>
 									</TextBlock>
 									<StackPanel Grid.Column="1" Orientation="Horizontal">
-										<Image Width="16" Height="16" Margin="2" Stretch="None"
-										       Source="{Binding Message.Author.GravatarHash, Converter={StaticResource GravatarConverterInline}, IsAsync=True}">
-											<Image.Clip>
-												<EllipseGeometry RadiusX="8" RadiusY="8" Center="8, 8"/>
-											</Image.Clip>
-										</Image>
+										<controls:Gravatar Size="16" Hash="{Binding Message.Author.GravatarHash, IsAsync=True}"/>
 										<TextBlock Text="{Binding Message.Author.DisplayName}"
 										           Style="{StaticResource ReadStyle}"/>
 									</StackPanel>

@@ -167,7 +167,7 @@ namespace Rsdn.JanusNG.Main
 
 		private async Task MarkMessageRead(MessageNode msg)
 		{
-			if (msg.IsRead != false)
+			if (msg == null || msg.IsRead != false)
 				return;
 			await Task.Delay(TimeSpan.FromSeconds(3));
 			if (Model.Message.ID != msg.Message.ID) // another message selected

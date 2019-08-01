@@ -134,14 +134,12 @@ namespace Rsdn.JanusNG.Services.Connection
 			if (id == null)
 				return;
 			using var db = _dbFactory();
+			var col = GetAccountsCol(db);
+			var account = col.Find(a => a.ID == int.Parse(id)).First();
 			var salt = GenerateSalt();
-			GetAccountsCol(db)
-				.Update(new AccountData
-				{
-					ID = int.Parse(id),
-					EncryptedToken = EncryptToken(token, salt),
-					Salt = Convert.ToBase64String(salt)
-				});
+			account.Salt = Convert.ToBase64String(salt);
+			account.EncryptedToken = EncryptToken(token, salt);
+			col.Update(account);
 		}
 
 		private static LiteCollection<AccountData> GetAccountsCol(LiteDatabase db)

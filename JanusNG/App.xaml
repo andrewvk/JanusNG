@@ -4,10 +4,6 @@
              xmlns:local="clr-namespace:Rsdn.JanusNG">
 	<Application.Resources>
 		<BooleanToVisibilityConverter x:Key="BoolConverter" />
-		<local:GravatarConverter x:Key="GravatarConverterSmall" Size="32" />
-		<local:GravatarConverter x:Key="GravatarConverterMedium" Size="64" />
-		<local:GravatarConverter x:Key="GravatarConverterBig" Size="160" />
-		<local:GravatarConverter x:Key="GravatarConverterInline" Size="16" />
 		<local:RateStringConverter x:Key="RateStringConverter" />
 
 		<Color x:Key="FilledColor" A="255" B="155" R="155" G="155" />

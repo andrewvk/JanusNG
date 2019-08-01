@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Rsdn.JanusNG.MessageView"
+             xmlns:controls="clr-namespace:Rsdn.JanusNG.Controls"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800"
              d:DataContext="{d:DesignInstance local:MessageView}">
@@ -20,12 +21,8 @@
 					<ColumnDefinition Width="*"/>
 				</Grid.ColumnDefinitions>
 				<StackPanel MaxWidth="70">
-					<Image Source="{Binding Message.Author.GravatarHash, Converter={StaticResource GravatarConverterMedium}}"
-					       Width="64" Height="64" Margin="3">
-						<Image.Clip>
-							<EllipseGeometry RadiusX="32" RadiusY="32" Center="32, 32"/>
-						</Image.Clip>
-					</Image>
+					<controls:Gravatar Margin="3" Size="64"
+					                   Hash="{Binding Message.Author.GravatarHash}"/>
 					<TextBlock Text="{Binding Message.Author.DisplayName}" FontWeight="DemiBold" FontSize="14"
 					           HorizontalAlignment="Center" TextWrapping="Wrap"/>
 				</StackPanel>
