@@ -4,8 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using Rsdn.Api.Models.Forums;
+using CodeJam.Strings;
 using Rsdn.Api.Models.Messages;
+using Rsdn.JanusNG.Services;
 using Rsdn.JanusNG.Services.Connection;
 
 namespace Rsdn.JanusNG.Main
@@ -15,13 +16,16 @@ namespace Rsdn.JanusNG.Main
 	/// </summary>
 	public partial class MainWindow
 	{
+		private const string _curForumVar = "MainForm.CurrentForumID";
 		private readonly ApiConnectionService _api;
 		private readonly AccountsService _accountsService;
+		private readonly VarsService _varsService;
 
-		public MainWindow(ApiConnectionService api, AccountsService accountsService)
+		public MainWindow(ApiConnectionService api, AccountsService accountsService, VarsService varsService)
 		{
 			_api = api;
 			_accountsService = accountsService;
+			_varsService = varsService;
 			InitializeComponent();
 			Model.Accounts = _accountsService.GetAccounts();
 			Model.CurrentAccount = _accountsService.GetCurrentAccount();
@@ -43,45 +47,50 @@ namespace Rsdn.JanusNG.Main
 
 		private async void WindowLoaded(object sender, RoutedEventArgs e)
 		{
+			var selectedForumID = _varsService.GetVar(_curForumVar);
 			await ReloadModel();
+			if (selectedForumID.NotNullNorEmpty())
+				ForumsList.SelectForum(int.Parse(selectedForumID));
 		}
 
 		private async Task ReloadModel()
 		{
-			var selectedForumID = (ForumsList.SelectedItem as ForumDescription)?.ID;
 			await RefreshForumsAsync();
-			if (selectedForumID != null)
-			{
-				var forum = Model.Forums.SelectMany(fg => fg.Forums).FirstOrDefault(f => f.ID == selectedForumID);
-				if (forum != null)
-					if (ForumsList.ItemContainerGenerator.ContainerFromItem(forum) is TreeViewItem tvi)
-						tvi.IsSelected = true;
-			}
 		}
 
 		private async Task RefreshForumsAsync()
 		{
+			var selectedForumID = ForumsList.SelectedForum?.ID;
 			using (ForumsList.ApplyLoader())
 				Model.Forums = await LoadForumsAsync();
+			if (selectedForumID.HasValue)
+				ForumsList.SelectForum(selectedForumID.Value);
 		}
 
-		private async void ForumsSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> routedPropertyChangedEventArgs)
+		private async void ForumsSelectionChanged(object sender, RoutedEventArgs routedEventArgs)
 		{
-			switch (ForumsList.SelectedItem)
+			if (ForumsList.SelectedForum != null)
 			{
-				case ForumDescription f:
-					using (MessagesList.ApplyLoader())
-						Model.Topics = await LoadTopics(f.ID);
-					//var m = Model.Topics.Max(t => t.Message.AnswersCount);
-					break;
-				default:
-					Model.Topics = null;
-					break;
+				using (MessagesList.ApplyLoader())
+					Model.Topics = await LoadTopics(ForumsList.SelectedForum.ID);
+				_varsService.SetVar(_curForumVar, ForumsList.SelectedForum.ID.ToString());
 			}
+			//switch (ForumsList.SelectedItem)
+			//{
+			//	case ForumDescription f:
+			//		using (MessagesList.ApplyLoader())
+			//			Model.Topics = await LoadTopics(f.ID);
+			//		//var m = Model.Topics.Max(t => t.Message.AnswersCount);
+			//		break;
+			//	default:
+			//		Model.Topics = null;
+			//		break;
+			//}
 		}
 
 		private async Task<ForumGroup[]> LoadForumsAsync() =>
 			(await _api.Client.Forums.GetForumsAsync())
+			.Where(f => !f.IsService || f.Code == "test")
 			.OrderBy(f => f.Name)
 			.GroupBy(
 				f => f.ForumGroup.ID,
@@ -106,13 +115,14 @@ namespace Rsdn.JanusNG.Main
 				forumID: forumID,
 				onlyTopics: true,
 				withRates: true,
-				withReadMarks: true))
+				withReadMarks: true,
+				order: MessageOrder.LastAnswerDesc))
 			.Items
 			.Select(m => new TopicNode
 			{
 				Message = m,
 				IsLoaded = m.AnswersCount == 0,
-				Children = m.AnswersCount != 0 ? new []{new MessageNode()} : Array.Empty<MessageNode>(),
+				Children = m.AnswersCount != 0 ? new MessageNode[]{ new PlaceholderNode() } : Array.Empty<MessageNode>(),
 				IsRead = m.IsRead,
 				TopicUnreadCount = m.TopicUnreadCount.GetValueOrDefault()
 			})
@@ -140,7 +150,7 @@ namespace Rsdn.JanusNG.Main
 				.Items
 				.GroupBy(m => m.ParentID)
 				.ToDictionary(grp => grp.Key, grp => grp.ToArray());
-			topic.Children = BuildTopicTree(messageMap, topic.Message.ID, 0, topic);
+			topic.Children = BuildTopicTree(messageMap, topic.Message.ID, 0, topic, topic);
 			topic.IsLoaded = true;
 		}
 
@@ -148,19 +158,25 @@ namespace Rsdn.JanusNG.Main
 			IReadOnlyDictionary<int, MessageInfo[]> messageMap,
 			int parentID,
 			int level,
-			TopicNode topicNode)
+			TopicNode topicNode,
+			MessageNode parentNode)
 		{
 			if (!messageMap.TryGetValue(parentID, out var children))
 				return Array.Empty<MessageNode>();
 			level += 1;
 			return children
-				.Select(c => new MessageNode
+				.Select(c =>
 				{
-					Message = c,
-					Children = BuildTopicTree(messageMap, c.ID, level, topicNode),
-					Level = level,
-					IsRead = c.IsRead,
-					TopicNode = topicNode
+					var res = new MessageNode
+					{
+						Message = c,
+						Level = level,
+						IsRead = c.IsRead,
+						TopicNode = topicNode,
+						ParentNode = parentNode
+					};
+					res.Children = BuildTopicTree(messageMap, c.ID, level, topicNode, res);
+					return res;
 				})
 				.ToArray();
 		}
@@ -169,7 +185,7 @@ namespace Rsdn.JanusNG.Main
 		{
 			if (msg == null || msg.IsRead != false)
 				return;
-			await Task.Delay(TimeSpan.FromSeconds(3));
+			await Task.Delay(TimeSpan.FromSeconds(2));
 			if (Model.Message.ID != msg.Message.ID) // another message selected
 				return;
 			await _api

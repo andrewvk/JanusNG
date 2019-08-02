@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Data;
+
 namespace Rsdn.JanusNG.Main
 {
 	public class MessageRowStyleConverter : IMultiValueConverter
@@ -12,17 +14,29 @@ namespace Rsdn.JanusNG.Main
 
 		public Style RepliesUnreadStyle { get; set; }
 
+		public Style PlaceholderStyle { get; set; }
+
 		public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
 		{
-			if (values.Length != 2)
+			if (values.Length == 0 || !(values[0] is MessageNode msg))
 				return ReadStyle;
-			var isRead = values[0] as bool? != false;
+
+			if (values[0] is PlaceholderNode)
+				return PlaceholderStyle;
+
+			if (msg.IsRead == false)
+				return UnreadStyle;
+
+			if (msg is TopicNode topic)
+				return topic.TopicUnreadCount > 0 ? RepliesUnreadStyle : ReadStyle;
+
+			bool HasUnreadReplies(MessageNode msg) =>
+				msg.Children.Any(cm => cm.IsRead == false || HasUnreadReplies(cm));
+
 			return
-				isRead
-					? values[1] as int? > 0
-						? RepliesUnreadStyle
-						: ReadStyle
-					: UnreadStyle;
+				HasUnreadReplies(msg)
+					? RepliesUnreadStyle
+					: ReadStyle;
 		}
 
 		public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>

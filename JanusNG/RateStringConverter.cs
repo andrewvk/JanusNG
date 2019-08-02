@@ -12,8 +12,6 @@ namespace Rsdn.JanusNG
 	{
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			if (targetType != typeof(string))
-				throw new NotSupportedException();
 			if (!(value is MessageRates rates))
 				return "";
 

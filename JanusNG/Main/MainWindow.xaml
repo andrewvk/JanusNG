@@ -4,11 +4,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:localmain="clr-namespace:Rsdn.JanusNG.Main"
-        xmlns:msgview="clr-namespace:Rsdn.JanusNG.MessageView"
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:controls="clr-namespace:Rsdn.JanusNG.Controls"
+        xmlns:messageView="clr-namespace:Rsdn.JanusNG.Controls.MessageView"
+        xmlns:forums="clr-namespace:Rsdn.JanusNG.Controls.Forums"
         mc:Ignorable="d"
-        Title="RSDN@Home" Height="900" Width="1400"
+        Title="RSDN@Home" Height="900" Width="1600"
         Loaded="WindowLoaded">
 	<Window.DataContext>
 		<localmain:MainModel x:Name="Model" />
@@ -46,6 +47,11 @@
 				<Button.ContextMenu>
 					<ContextMenu>
 						<MenuItem Header="Accounts" ItemsSource="{Binding Accounts}">
+							<MenuItem.ItemContainerStyle>
+								<Style TargetType="MenuItem">
+									<EventSetter Event="Click" Handler="AccountClicked"/>
+								</Style>
+							</MenuItem.ItemContainerStyle>
 							<MenuItem.ItemTemplate>
 								<DataTemplate>
 									<StackPanel Orientation="Horizontal">
@@ -68,23 +74,7 @@
 				<ColumnDefinition Width="4" />
 				<ColumnDefinition Width="3*" />
 			</Grid.ColumnDefinitions>
-			<TreeView Name="ForumsList" ItemsSource="{Binding Forums}" SelectedItemChanged="ForumsSelectionChanged">
-				<TreeView.ItemContainerStyle>
-					<Style TargetType="{x:Type TreeViewItem}">
-						<Setter Property="IsExpanded" Value="True"/>
-					</Style>
-				</TreeView.ItemContainerStyle>
-				<TreeView.ItemTemplate>
-					<HierarchicalDataTemplate ItemsSource="{Binding Forums}">
-						<TextBlock Text="{Binding Name}" FontWeight="DemiBold"/>
-						<HierarchicalDataTemplate.ItemTemplate>
-							<DataTemplate>
-								<TextBlock Text="{Binding Name}"/>
-							</DataTemplate>
-						</HierarchicalDataTemplate.ItemTemplate>
-					</HierarchicalDataTemplate>
-				</TreeView.ItemTemplate>
-			</TreeView>
+			<forums:ForumsView x:Name="ForumsList" Forums="{Binding Forums}" SelectedForumChanged="ForumsSelectionChanged"/>
 			<GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
 			<Grid Grid.Column="2">
 				<Grid.RowDefinitions>
@@ -92,22 +82,30 @@
 					<RowDefinition Height="4" />
 					<RowDefinition Height="2*" />
 				</Grid.RowDefinitions>
-				<Border Grid.IsSharedSizeScope="True">
+				<Border>
 					<Border.Resources>
 						<localmain:ReplyCountConverter x:Key="ReplyCountConv"/>
-						<Style x:Key="ReadStyle" TargetType="{x:Type TextBlock}">
-							<Setter Property="Margin" Value="3 0 3 0"/>
+						<Style x:Key="CellBaseStyle" TargetType="Control">
+							<Setter Property="Margin" Value="3, 0, 3, 0"/>
 						</Style>
-						<Style x:Key="UnreadStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource ReadStyle}">
-							<Setter Property="FontWeight" Value="Bold"/>
-						</Style>
-						<Style x:Key="RepliesUnreadStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource ReadStyle}">
-							<Setter Property="FontWeight" Value="DemiBold"/>
-						</Style>
-						<localmain:MessageRowStyleConverter x:Key="RowStyleConverter"
-						                                    ReadStyle="{StaticResource ReadStyle}"
-						                                    UnreadStyle="{StaticResource UnreadStyle}"
-						                                    RepliesUnreadStyle="{StaticResource RepliesUnreadStyle}"/>
+						<localmain:MessageRowStyleConverter x:Key="RowStyleConverter" PlaceholderStyle="{StaticResource BusyAnimationSmallStyle}">
+							<localmain:MessageRowStyleConverter.ReadStyle>
+								<Style TargetType="{x:Type Control}" BasedOn="{StaticResource CellBaseStyle}">
+									<Setter Property="FontWeight" Value="Normal"/>
+								</Style>
+							</localmain:MessageRowStyleConverter.ReadStyle>
+							<localmain:MessageRowStyleConverter.UnreadStyle>
+								<Style TargetType="{x:Type Control}" BasedOn="{StaticResource CellBaseStyle}">
+									<Setter Property="FontWeight" Value="Bold"/>
+								</Style>
+							</localmain:MessageRowStyleConverter.UnreadStyle>
+							<localmain:MessageRowStyleConverter.RepliesUnreadStyle>
+								<Style TargetType="{x:Type Control}" BasedOn="{StaticResource CellBaseStyle}">
+									<Setter Property="FontWeight" Value="DemiBold"/>
+								</Style>
+							</localmain:MessageRowStyleConverter.RepliesUnreadStyle>
+						</localmain:MessageRowStyleConverter>
+						<localmain:FillWidthConverter x:Key="FillWidthConverter"/>
 					</Border.Resources>
 					<TreeView Name="MessagesList" ItemsSource="{Binding Topics}" SelectedItemChanged="MessageSelectionChanged"
 					          TreeViewItem.Expanded="TopicExpanded">
@@ -120,38 +118,41 @@
 							<HierarchicalDataTemplate ItemsSource="{Binding Children}">
 								<Grid>
 									<Grid.ColumnDefinitions>
-										<ColumnDefinition SharedSizeGroup="Subj" Width="*"/>
-										<ColumnDefinition SharedSizeGroup="Author" Width="Auto"/>
-										<ColumnDefinition SharedSizeGroup="AnswersCount" Width="Auto"/>
-										<ColumnDefinition SharedSizeGroup="Rates" Width="Auto"/>
-										<ColumnDefinition SharedSizeGroup="CreatedOn" Width="Auto"/>
+										<ColumnDefinition Width="480"/>
+										<ColumnDefinition/>
+										<ColumnDefinition Width="140"/>
+										<ColumnDefinition Width="80"/>
+										<ColumnDefinition Width="80"/>
+										<ColumnDefinition Width="120"/>
 									</Grid.ColumnDefinitions>
-									<TextBlock Text="{Binding Message.Subject}">
-										<TextBlock.Style>
+									<Label Content="{Binding Message.Subject}">
+										<Label.Style>
 											<MultiBinding Converter="{StaticResource RowStyleConverter}">
+												<Binding/>
 												<Binding Path="IsRead"/>
-												<Binding Path="TopicUnreadCount"/>
 											</MultiBinding>
-										</TextBlock.Style>
-									</TextBlock>
-									<StackPanel Grid.Column="1" Orientation="Horizontal">
+										</Label.Style>
+									</Label>
+									<TextBlock Grid.Column="1" Width="{Binding Converter={StaticResource FillWidthConverter}}"/>
+									<StackPanel Grid.Column="2" Orientation="Horizontal">
 										<controls:Gravatar Size="16" Hash="{Binding Message.Author.GravatarHash, IsAsync=True}"/>
-										<TextBlock Text="{Binding Message.Author.DisplayName}"
-										           Style="{StaticResource ReadStyle}"/>
+										<Label Content="{Binding Message.Author.DisplayName}"
+										           Style="{StaticResource CellBaseStyle}"/>
 									</StackPanel>
-									<TextBlock Grid.Column="2" Text="{Binding Message, Converter={StaticResource ReplyCountConv}}"
-									           TextAlignment="Right" Style="{StaticResource ReadStyle}"/>
-									<TextBlock Grid.Column="3" Text="{Binding Message.Rates, Converter={StaticResource RateStringConverter}}"
-									           Style="{StaticResource ReadStyle}"/>
-									<TextBlock Grid.Column="4" Text="{Binding Message.CreatedOn, StringFormat=g}" TextAlignment="Right"
-									           Style="{StaticResource ReadStyle}"/>
+									<Label Grid.Column="3" Content="{Binding Message, Converter={StaticResource ReplyCountConv}}"
+									           HorizontalAlignment="Right" Style="{StaticResource CellBaseStyle}"/>
+									<Label Grid.Column="4" Content="{Binding Message.Rates, Converter={StaticResource RateStringConverter}}"
+									           Style="{StaticResource CellBaseStyle}" HorizontalAlignment="Right"/>
+									<Label Grid.Column="5" Content="{Binding Message.CreatedOn, Converter={StaticResource DateConverter}}"
+									       HorizontalAlignment="Right" Style="{StaticResource CellBaseStyle}"/>
 								</Grid>
+
 							</HierarchicalDataTemplate>
 						</TreeView.ItemTemplate>
 					</TreeView>
 				</Border>
 				<GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" />
-				<msgview:MessageView x:Name="MessageView" Grid.Row="2" Message="{Binding Message}"/>
+				<messageView:MessageView x:Name="MessageView" Grid.Row="2" Message="{Binding Message}"/>
 			</Grid>
 		</Grid>
 	</Grid>

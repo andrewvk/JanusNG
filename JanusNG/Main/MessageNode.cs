@@ -30,10 +30,19 @@ namespace Rsdn.JanusNG.Main
 			{
 				_isRead = value;
 				OnPropertyChanged(nameof(IsRead));
+				// Notify all parents
+				var parent = ParentNode;
+				while (parent != null)
+				{
+					parent.OnPropertyChanged(nameof(IsRead));
+					parent = parent.ParentNode;
+				}
 			}
 		}
 
 		public TopicNode TopicNode { get; set; }
+
+		public MessageNode ParentNode { get; set; }
 
 		public event PropertyChangedEventHandler PropertyChanged;
 

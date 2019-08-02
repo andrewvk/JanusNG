@@ -4,7 +4,7 @@ using Rsdn.Api.Models.Messages;
 using Rsdn.Framework.Formatting.Resources;
 using Rsdn.JanusNG.Rates;
 
-namespace Rsdn.JanusNG.MessageView
+namespace Rsdn.JanusNG.Controls.MessageView
 {
 	/// <summary>
 	/// Interaction logic for MessageView.xaml
@@ -42,8 +42,7 @@ namespace Rsdn.JanusNG.MessageView
 
 		private void RatesClick(object sender, MouseButtonEventArgs e)
 		{
-			var wnd = new RatesWindow(Message.Rates);
-			wnd.Owner = Window.GetWindow(this);
+			var wnd = new RatesWindow(Message.Rates) {Owner = Window.GetWindow(this)};
 			wnd.ShowDialog();
 		}
 	}
