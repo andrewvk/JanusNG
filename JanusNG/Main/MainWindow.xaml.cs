@@ -131,11 +131,15 @@ namespace Rsdn.JanusNG.Main
 		private async void MessageSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> routedPropertyChangedEventArgs)
 		{
 			var msg = (MessageNode)MessagesList.SelectedItem;
-			using (MessageView.ApplyLoader())
-				Model.Message =
-					msg?.Message != null
-						? await _api.Client.Messages.GetMessageAsync(msg.Message.ID, withRates: true, withBodies: true, formatBody: true)
-						: null;
+			if (msg != null)
+				using (MessageView.ApplyLoader())
+					msg.Message =
+						await _api.Client.Messages.GetMessageAsync(
+							msg.Message.ID,
+							withRates: true,
+							withBodies: true,
+							formatBody: true);
+			Model.Message = msg;
 			if (Model.IsSignedIn && Model.Message?.IsRead != true)
 #pragma warning disable CS4014
 				Task.Run(() => MarkMessageRead(msg));
@@ -186,7 +190,7 @@ namespace Rsdn.JanusNG.Main
 			if (msg == null || msg.IsRead != false)
 				return;
 			await Task.Delay(TimeSpan.FromSeconds(2));
-			if (Model.Message.ID != msg.Message.ID) // another message selected
+			if (Model.Message.Message.ID != msg.Message.ID) // another message selected
 				return;
 			await _api
 				.Client

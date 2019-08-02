@@ -139,8 +139,14 @@
 										<Label Content="{Binding Message.Author.DisplayName}"
 										           Style="{StaticResource CellBaseStyle}"/>
 									</StackPanel>
-									<Label Grid.Column="3" Content="{Binding Message, Converter={StaticResource ReplyCountConv}}"
-									           HorizontalAlignment="Right" Style="{StaticResource CellBaseStyle}"/>
+									<Label Grid.Column="3" HorizontalAlignment="Right" Style="{StaticResource CellBaseStyle}">
+										<Label.Content>
+											<MultiBinding Converter="{StaticResource ReplyCountConv}">
+												<Binding/>
+												<Binding Path="IsRead"/>
+											</MultiBinding>
+										</Label.Content>
+									</Label>
 									<Label Grid.Column="4" Content="{Binding Message.Rates, Converter={StaticResource RateStringConverter}}"
 									           Style="{StaticResource CellBaseStyle}" HorizontalAlignment="Right"/>
 									<Label Grid.Column="5" Content="{Binding Message.CreatedOn, Converter={StaticResource DateConverter}}"

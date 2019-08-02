@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
-using Rsdn.Api.Models.Messages;
 using Rsdn.Framework.Formatting.Resources;
+using Rsdn.JanusNG.Main;
 using Rsdn.JanusNG.Rates;
 
 namespace Rsdn.JanusNG.Controls.MessageView
@@ -14,7 +14,7 @@ namespace Rsdn.JanusNG.Controls.MessageView
 		public static readonly DependencyProperty MessageProperty =
 			DependencyProperty.Register(
 				"Message",
-				typeof(MessageInfo),
+				typeof(MessageNode),
 				typeof(MessageView),
 				new UIPropertyMetadata(null, ChangeCallback));
 
@@ -26,23 +26,23 @@ namespace Rsdn.JanusNG.Controls.MessageView
 			InitializeComponent();
 		}
 
-		public MessageInfo Message
+		public MessageNode Message
 		{
-			get => (MessageInfo) GetValue(MessageProperty);
+			get => (MessageNode) GetValue(MessageProperty);
 			set => SetValue(MessageProperty, value);
 		}
 
-		private static void ChangeCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
+		private static void ChangeCallback(DependencyObject sender, DependencyPropertyChangedEventArgs e)
 		{
-			var msgView = (MessageView)d;
+			var msgView = (MessageView)sender;
 			msgView.MessageBrowser.NavigateToString(
 				$"<head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8'><style>{_css}</style></head>" +
-				$"<body><div class='m'>{((MessageInfo) e.NewValue)?.Body?.Text ?? " "}</div></body>");
+				$"<body><div class='m'>{((MessageNode) e.NewValue)?.Message?.Body?.Text ?? " "}</div></body>");
 		}
 
 		private void RatesClick(object sender, MouseButtonEventArgs e)
 		{
-			var wnd = new RatesWindow(Message.Rates) {Owner = Window.GetWindow(this)};
+			var wnd = new RatesWindow(Message.Message.Rates) {Owner = Window.GetWindow(this)};
 			wnd.ShowDialog();
 		}
 	}

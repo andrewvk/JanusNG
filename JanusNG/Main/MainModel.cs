@@ -11,7 +11,7 @@ namespace Rsdn.JanusNG.Main
 	{
 		private ForumGroup[] _forums;
 		private TopicNode[] _topics;
-		private MessageInfo _message;
+		private MessageNode _message;
 		private AccountInfo _me;
 		private Account _currentAccount;
 		private Account[] _accounts;
@@ -72,7 +72,7 @@ namespace Rsdn.JanusNG.Main
 			}
 		}
 
-		public MessageInfo Message
+		public MessageNode Message
 		{
 			get => _message;
 			set
