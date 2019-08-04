@@ -19,12 +19,12 @@ namespace Rsdn.JanusNG.Controls.Forums
 				typeof(ForumsView),
 				new UIPropertyMetadata());
 
-		//public static readonly DependencyProperty SelectedForumProperty =
-		//	DependencyProperty.Register(
-		//		"SelectedForum",
-		//		typeof(ForumDescription),
-		//		typeof(ForumsView),
-		//		new UIPropertyMetadata());
+		public static readonly DependencyProperty SelectedForumProperty =
+			DependencyProperty.Register(
+				"SelectedForum",
+				typeof(ForumDescription),
+				typeof(ForumsView),
+				new UIPropertyMetadata());
 
 		public ForumsView()
 		{
@@ -37,12 +37,21 @@ namespace Rsdn.JanusNG.Controls.Forums
 			set => SetValue(ForumsProperty, value);
 		}
 
-		public ForumDescription SelectedForum => ForumsList.SelectedItem as ForumDescription;
-
-		public event RoutedEventHandler SelectedForumChanged;
+		public ForumDescription SelectedForum
+		{
+			get => (ForumDescription) GetValue(SelectedForumProperty);
+			set
+			{
+				SetValue(SelectedForumProperty, value);
+				if (value != null)
+					SelectForum(value.ID);
+			}
+		}
 
 		public void SelectForum(int forumID)
 		{
+			if (SelectedForum?.ID == forumID)
+				return;
 			var forum = Forums
 				.SelectMany(fg => fg.Forums, (fg, f) => new {Group = fg, Forum = f})
 				.FirstOrDefault(f => f.Forum.ID == forumID);
@@ -56,9 +65,9 @@ namespace Rsdn.JanusNG.Controls.Forums
 			forumTvi.IsSelected = true;
 		}
 
-		private void ForumsSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+		private void SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
 		{
-			SelectedForumChanged?.Invoke(this, e);
+			SelectedForum = ForumsList.SelectedItem as ForumDescription;
 		}
 	}
 }

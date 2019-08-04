@@ -7,8 +7,7 @@
              xmlns:forums="clr-namespace:Rsdn.Api.Models.Forums;assembly=Rsdn.Api.Models"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800" d:DataContext="{d:DesignInstance local:ForumsView}">
-	<TreeView Name="ForumsList" ItemsSource="{Binding Forums}"
-	          SelectedItemChanged="ForumsSelectionChanged" Grid.IsSharedSizeScope="True">
+	<TreeView Name="ForumsList" ItemsSource="{Binding Forums}" Grid.IsSharedSizeScope="True" SelectedItemChanged="SelectedItemChanged">
 		<TreeView.ItemContainerStyle>
 			<Style TargetType="{x:Type TreeViewItem}">
 				<Setter Property="IsExpanded" Value="True"/>

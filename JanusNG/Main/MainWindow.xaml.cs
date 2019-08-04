@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using Microsoft.Extensions.DependencyInjection;
 using Rsdn.Api.Models.Messages;
 using Rsdn.JanusNG.Services;
 using Rsdn.JanusNG.Services.Connection;
@@ -18,37 +19,35 @@ namespace Rsdn.JanusNG.Main
 	{
 		private const string _curSelectionVar = "MainForm.CurrentSelectionIDs";
 		private readonly ApiConnectionService _api;
-		private readonly AccountsService _accountsService;
 		private readonly VarsService _varsService;
 
-		public MainWindow(ApiConnectionService api, AccountsService accountsService, VarsService varsService)
+		public MainWindow(
+			IServiceProvider serviceProvider,
+			ApiConnectionService api,
+			VarsService varsService)
 		{
 			_api = api;
-			_accountsService = accountsService;
 			_varsService = varsService;
+			ViewModel = ActivatorUtilities.CreateInstance<MainViewModel>(serviceProvider);
+			DataContext = ViewModel;
 			InitializeComponent();
-			Model.Accounts = _accountsService.GetAccounts();
-			Model.CurrentAccount = _accountsService.GetCurrentAccount();
+			ViewModel.SignedIn += SignedIn;
 		}
 
-		private async void SignInClick(object sender, RoutedEventArgs e)
+		private MainViewModel ViewModel { get; }
+
+		private void SignedIn(object sender, EventArgs e)
 		{
-			var acc = await _api.SignInAsync();
 			// Bring to front
 			Activate();
 			Topmost = true;  // important
 			Topmost = false; // important
 			Focus();
-
-			Model.CurrentAccount = acc;
-			Model.Accounts = _accountsService.GetAccounts();
-			await ReloadModel();
 		}
 
 		private async void WindowLoaded(object sender, RoutedEventArgs e)
 		{
 			var selectedIDs = FullMsgID.TryParse(_varsService.GetVar(_curSelectionVar));
-			await ReloadModel();
 			await SelectMessage(selectedIDs);
 		}
 
@@ -59,9 +58,9 @@ namespace Rsdn.JanusNG.Main
 			ForumsList.SelectForum(ids.ForumID);
 			if (!ids.TopicID.HasValue || !ids.MessageID.HasValue)
 				return;
-			if (Model.Topics == null)
-				await LoadTopicsAsync(ids.ForumID);
-			var topic = Model.Topics?.FirstOrDefault(t => t.Message.ID == ids.TopicID);
+			//if (ViewModel.Topics == null)
+			//	await LoadTopicsAsync(ids.ForumID);
+			var topic = ViewModel.Topics?.FirstOrDefault(t => t.Message.ID == ids.TopicID);
 			if (topic == null)
 				return;
 			var path = new List<MessageNode> { topic };
@@ -104,72 +103,6 @@ namespace Rsdn.JanusNG.Main
 				tvi.IsSelected = true;
 		}
 
-		private async Task ReloadModel()
-		{
-			await RefreshForumsAsync();
-		}
-
-		private async Task RefreshForumsAsync()
-		{
-			var selectedForumID = ForumsList.SelectedForum?.ID;
-			using (ForumsList.ApplyLoader())
-				Model.Forums = await LoadForumsAsync();
-			if (selectedForumID.HasValue)
-				ForumsList.SelectForum(selectedForumID.Value);
-		}
-
-		private async void ForumsSelectionChanged(object sender, RoutedEventArgs routedEventArgs)
-		{
-			if (ForumsList.SelectedForum != null)
-			{
-				using (MessagesList.ApplyLoader())
-					Model.Topics = await LoadTopicsAsync(ForumsList.SelectedForum.ID);
-				_varsService.SetVar(
-					_curSelectionVar,
-					new FullMsgID(ForumsList.SelectedForum.ID, null, null).ToString());
-			}
-		}
-
-		private async Task<ForumGroup[]> LoadForumsAsync() =>
-			(await _api.Client.Forums.GetForumsAsync())
-			.Where(f => !f.IsService || f.Code == "test")
-			.OrderBy(f => f.Name)
-			.GroupBy(
-				f => f.ForumGroup.ID,
-				f => f,
-				(gid, grp) =>
-				{
-					var res = new ForumGroup
-					{
-						Forums = grp.ToArray(),
-					};
-					var fg = res.Forums.First().ForumGroup;
-					res.Name = fg.Name;
-					res.SortOrder = fg.SortOrder;
-					return res;
-				})
-			.OrderBy(g => g.SortOrder)
-			.ToArray();
-
-		private async Task<TopicNode[]> LoadTopicsAsync(int forumID) =>
-			(await _api.Client.Messages.GetMessagesAsync(
-				limit: 50,
-				forumID: forumID,
-				onlyTopics: true,
-				withRates: true,
-				withReadMarks: true,
-				order: MessageOrder.LastAnswerDesc))
-			.Items
-			.Select(m => new TopicNode
-			{
-				Message = m,
-				IsLoaded = m.AnswersCount == 0,
-				Children = m.AnswersCount != 0 ? new MessageNode[]{ new PlaceholderNode() } : Array.Empty<MessageNode>(),
-				IsRead = m.IsRead,
-				TopicUnreadCount = m.TopicUnreadCount.GetValueOrDefault()
-			})
-			.ToArray();
-
 		private async void MessageSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> routedPropertyChangedEventArgs)
 		{
 			var msg = (MessageNode)MessagesList.SelectedItem;
@@ -184,10 +117,10 @@ namespace Rsdn.JanusNG.Main
 							formatBody: true);
 					_varsService.SetVar(
 						_curSelectionVar,
-						new FullMsgID(ForumsList.SelectedForum.ID, msg.TopicNode?.Message.ID, msg.Message.ID).ToString());
+						new FullMsgID(ViewModel.SelectedForum.ID, msg.TopicNode?.Message.ID, msg.Message.ID).ToString());
 				}
-			Model.Message = msg;
-			if (Model.IsSignedIn && Model.Message?.IsRead != true)
+			ViewModel.Message = msg;
+			if (ViewModel.IsSignedIn && ViewModel.Message?.IsRead != true)
 #pragma warning disable CS4014
 				Task.Run(() => MarkMessageRead(msg));
 #pragma warning restore CS4014
@@ -243,7 +176,7 @@ namespace Rsdn.JanusNG.Main
 			if (msg == null || msg.IsRead != false)
 				return;
 			await Task.Delay(TimeSpan.FromSeconds(2));
-			if (Model.Message.Message.ID != msg.Message.ID) // another message selected
+			if (ViewModel.Message.Message.ID != msg.Message.ID) // another message selected
 				return;
 			await _api
 				.Client
@@ -253,20 +186,6 @@ namespace Rsdn.JanusNG.Main
 			if (msg.TopicNode != null)
 				lock (msg.TopicNode)
 					msg.TopicNode.TopicUnreadCount = msg.TopicNode.TopicUnreadCount - 1;
-		}
-
-		private async void SignOutClick(object sender, RoutedEventArgs e)
-		{
-			_api.SignOut();
-			Model.CurrentAccount = null;
-			await RefreshForumsAsync();
-		}
-
-		private async void AccountClicked(object sender, RoutedEventArgs e)
-		{
-			var account = (Account) ((MenuItem) sender).DataContext;
-			Model.CurrentAccount = _api.UseStoredAccount(account.ID);
-			await RefreshForumsAsync();
 		}
 	}
 }

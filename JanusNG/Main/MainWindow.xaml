@@ -3,17 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:localmain="clr-namespace:Rsdn.JanusNG.Main"
+        xmlns:local="clr-namespace:Rsdn.JanusNG.Main"
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:controls="clr-namespace:Rsdn.JanusNG.Controls"
         xmlns:messageView="clr-namespace:Rsdn.JanusNG.Controls.MessageView"
         xmlns:forums="clr-namespace:Rsdn.JanusNG.Controls.Forums"
         mc:Ignorable="d"
         Title="RSDN@Home" Height="900" Width="1600"
-        Loaded="WindowLoaded">
-	<Window.DataContext>
-		<localmain:MainModel x:Name="Model" />
-	</Window.DataContext>
+        Loaded="WindowLoaded" d:DataContext="{d:DesignInstance local:MainViewModel}">
 	<Window.Resources>
 	</Window.Resources>
 	<Grid Margin="4">
@@ -27,7 +24,7 @@
 					<controls:Gravatar Size="32" Hash="{Binding CurrentAccount.GravatarHash}" Margin="3, 3, 8, 3"/>
 					<TextBlock Text="{Binding CurrentAccount.DisplayName}" VerticalAlignment="Center"/>
 				</StackPanel>
-				<Button Visibility="{Binding IsNotSignedIn, Converter={StaticResource BoolConverter}}" Click="SignInClick"
+				<Button Visibility="{Binding IsNotSignedIn, Converter={StaticResource BoolConverter}}" Command="{Binding SignInCommand}"
 				        Background="Transparent" BorderBrush="Transparent">
 					<StackPanel Orientation="Horizontal">
 						<Image Width="32" Height="32" Source="../anonymous.png"/>
@@ -37,7 +34,7 @@
 			</StackPanel>
 			<Button Background="Transparent" BorderBrush="Transparent" Height="38">
 				<i:Interaction.Behaviors>
-					<localmain:DropDownButtonBehavior/>
+					<local:DropDownButtonBehavior/>
 				</i:Interaction.Behaviors>
 				<Button.Content>
 					<Path Margin="6, 2, 6, 2" VerticalAlignment="Center" Width="6" Fill="#FF527DB5" Stretch="Uniform"
@@ -49,21 +46,20 @@
 						<MenuItem Header="Accounts" ItemsSource="{Binding Accounts}">
 							<MenuItem.ItemContainerStyle>
 								<Style TargetType="MenuItem">
-									<EventSetter Event="Click" Handler="AccountClicked"/>
+									<Setter Property="Command" Value="{Binding SelectAccountCommand}"/>
 								</Style>
 							</MenuItem.ItemContainerStyle>
 							<MenuItem.ItemTemplate>
 								<DataTemplate>
 									<StackPanel Orientation="Horizontal">
-										<controls:Gravatar Size="16" Hash="{Binding GravatarHash}"/>
-										<TextBlock Text="{Binding DisplayName}"/>
+										<controls:Gravatar Size="16" Hash="{Binding Account.GravatarHash}"/>
+										<TextBlock Text="{Binding Account.DisplayName}"/>
 									</StackPanel>
 								</DataTemplate>
 							</MenuItem.ItemTemplate>
 						</MenuItem>
 						<Separator/>
-						<MenuItem Header="Sign Out" Click="SignOutClick"
-						          Visibility="{Binding IsSignedIn, Converter={StaticResource BoolConverter}}"/>
+						<MenuItem Command="{Binding SignOutCommand}" Header="Sign Out"/>
 					</ContextMenu>
 				</Button.ContextMenu>
 			</Button>
@@ -74,7 +70,8 @@
 				<ColumnDefinition Width="4" />
 				<ColumnDefinition Width="3*" />
 			</Grid.ColumnDefinitions>
-			<forums:ForumsView x:Name="ForumsList" Forums="{Binding Forums}" SelectedForumChanged="ForumsSelectionChanged"/>
+			<forums:ForumsView x:Name="ForumsList" Forums="{Binding Forums}" Style="{Binding ForumsLoading, Converter={StaticResource BusyStyleConverter}}"
+			                   SelectedForum="{Binding SelectedForum, Mode=OneWayToSource}"/>
 			<GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
 			<Grid Grid.Column="2">
 				<Grid.RowDefinitions>
@@ -84,31 +81,31 @@
 				</Grid.RowDefinitions>
 				<Border>
 					<Border.Resources>
-						<localmain:ReplyCountConverter x:Key="ReplyCountConv"/>
+						<local:ReplyCountConverter x:Key="ReplyCountConv"/>
 						<Style x:Key="CellBaseStyle" TargetType="Control">
 							<Setter Property="Margin" Value="3, 0, 3, 0"/>
 						</Style>
-						<localmain:MessageRowStyleConverter x:Key="RowStyleConverter" PlaceholderStyle="{StaticResource BusyAnimationSmallStyle}">
-							<localmain:MessageRowStyleConverter.ReadStyle>
+						<local:MessageRowStyleConverter x:Key="RowStyleConverter" PlaceholderStyle="{StaticResource BusyAnimationSmallStyle}">
+							<local:MessageRowStyleConverter.ReadStyle>
 								<Style TargetType="{x:Type Control}" BasedOn="{StaticResource CellBaseStyle}">
 									<Setter Property="FontWeight" Value="Normal"/>
 								</Style>
-							</localmain:MessageRowStyleConverter.ReadStyle>
-							<localmain:MessageRowStyleConverter.UnreadStyle>
+							</local:MessageRowStyleConverter.ReadStyle>
+							<local:MessageRowStyleConverter.UnreadStyle>
 								<Style TargetType="{x:Type Control}" BasedOn="{StaticResource CellBaseStyle}">
 									<Setter Property="FontWeight" Value="Bold"/>
 								</Style>
-							</localmain:MessageRowStyleConverter.UnreadStyle>
-							<localmain:MessageRowStyleConverter.RepliesUnreadStyle>
+							</local:MessageRowStyleConverter.UnreadStyle>
+							<local:MessageRowStyleConverter.RepliesUnreadStyle>
 								<Style TargetType="{x:Type Control}" BasedOn="{StaticResource CellBaseStyle}">
 									<Setter Property="FontWeight" Value="DemiBold"/>
 								</Style>
-							</localmain:MessageRowStyleConverter.RepliesUnreadStyle>
-						</localmain:MessageRowStyleConverter>
-						<localmain:FillWidthConverter x:Key="FillWidthConverter"/>
+							</local:MessageRowStyleConverter.RepliesUnreadStyle>
+						</local:MessageRowStyleConverter>
+						<local:FillWidthConverter x:Key="FillWidthConverter"/>
 					</Border.Resources>
 					<TreeView Name="MessagesList" ItemsSource="{Binding Topics}" SelectedItemChanged="MessageSelectionChanged"
-					          TreeViewItem.Expanded="TopicExpanded">
+					          TreeViewItem.Expanded="TopicExpanded" Style="{Binding TopicsLoading, Converter={StaticResource BusyStyleConverter}}">
 						<TreeView.ItemContainerStyle>
 							<Style TargetType="TreeViewItem">
 								<Setter Property="Margin" Value="-8,0,0,0"/>
