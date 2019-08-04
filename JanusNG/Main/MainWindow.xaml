@@ -70,8 +70,8 @@
 				<ColumnDefinition Width="4" />
 				<ColumnDefinition Width="3*" />
 			</Grid.ColumnDefinitions>
-			<forums:ForumsView x:Name="ForumsList" Forums="{Binding Forums}" Style="{Binding ForumsLoading, Converter={StaticResource BusyStyleConverter}}"
-			                   SelectedForum="{Binding SelectedForum, Mode=OneWayToSource}"/>
+			<forums:ForumsView Forums="{Binding Forums}" Style="{Binding ForumsLoading, Converter={StaticResource BusyStyleConverter}}"
+			                   SelectedForum="{Binding SelectedForum, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 			<GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
 			<Grid Grid.Column="2">
 				<Grid.RowDefinitions>
@@ -155,7 +155,8 @@
 					</TreeView>
 				</Border>
 				<GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" />
-				<messageView:MessageView x:Name="MessageView" Grid.Row="2" Message="{Binding Message}"/>
+				<messageView:MessageView x:Name="MessageView" Grid.Row="2" Message="{Binding Message, Mode=OneWay}"
+				                         Style="{Binding MessageLoading, Converter={StaticResource BusyStyleConverter}}"/>
 			</Grid>
 		</Grid>
 	</Grid>

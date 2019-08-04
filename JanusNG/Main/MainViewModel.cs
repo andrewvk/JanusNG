@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -37,7 +38,68 @@ namespace Rsdn.JanusNG.Main
 					})))
 				.ToArray();
 			CurrentAccount = accountsService.GetCurrentAccount();
-			LoadForumsAsync();
+		}
+
+		public async Task Init()
+		{
+			await LoadForumsAsync();
+			var selectedIDs = FullMsgID.TryParse(_varsService.GetVar(_curSelectionVar));
+			if (selectedIDs != null)
+			{
+				var forum = Forums.SelectMany(fg => fg.Forums).FirstOrDefault(f => f.ID == selectedIDs.ForumID);
+				SelectedForum = forum;
+				if (selectedIDs.MessageID.HasValue)
+				{
+					await LoadTopicsAsync(selectedIDs.ForumID);
+					var topic = Topics.FirstOrDefault(t =>
+						t.Message.ID == selectedIDs.TopicID.GetValueOrDefault(selectedIDs.MessageID.Value));
+					if (topic != null)
+					{
+						await LoadRepliesAsync(topic);
+						MessageNode FindMessage(int id, MessageNode m) =>
+							m.Message.ID == id ? m : m.Children.Select(mc => FindMessage(id, mc)).FirstOrDefault();
+						Message = FindMessage(selectedIDs.MessageID.Value, topic);
+					}
+				}
+			}
+		}
+
+		private async Task LoadRepliesAsync(TopicNode topic)
+		{
+			var messageMap =
+				(await _api.Client.Messages.GetMessagesAsync(topicID: topic.Message.ID, withRates: true, withReadMarks: true))
+				.Items
+				.GroupBy(m => m.ParentID)
+				.ToDictionary(grp => grp.Key, grp => grp.ToArray());
+			topic.Children = BuildTopicTree(messageMap, topic.Message.ID, 0, topic, topic);
+			topic.IsLoaded = true;
+		}
+
+		private static MessageNode[] BuildTopicTree(
+			IReadOnlyDictionary<int, MessageInfo[]> messageMap,
+			int parentID,
+			int level,
+			TopicNode topicNode,
+			MessageNode parentNode)
+		{
+			if (!messageMap.TryGetValue(parentID, out var children))
+				return Array.Empty<MessageNode>();
+			level += 1;
+			return children
+				.Select(c =>
+				{
+					var res = new MessageNode
+					{
+						Message = c,
+						Level = level,
+						IsRead = c.IsRead,
+						TopicNode = topicNode,
+						ParentNode = parentNode
+					};
+					res.Children = BuildTopicTree(messageMap, c.ID, level, topicNode, res);
+					return res;
+				})
+				.ToArray();
 		}
 
 		private bool _forumsLoading;
@@ -53,9 +115,10 @@ namespace Rsdn.JanusNG.Main
 			}
 		}
 
+
 		public ForumGroup[] Forums {get; private set; }
 
-		private async void LoadForumsAsync()
+		private async Task LoadForumsAsync()
 		{
 			ForumsLoading = true;
 			try
@@ -107,16 +170,17 @@ namespace Rsdn.JanusNG.Main
 		private async void SetSelectedForumAsync(ForumDescription forum)
 		{
 			await LoadTopicsAsync(forum?.ID);
-			_varsService.SetVar(
-				_curSelectionVar,
-				forum != null ? new FullMsgID(forum.ID, null, null).ToString() : null);
+			if (forum != null)
+				_varsService.SetVar(
+					_curSelectionVar,
+					new FullMsgID(forum.ID, null, null).ToString());
 			_selectedForum = forum;
 			OnPropertyChanged(nameof(SelectedForum));
 		}
 
 		private async Task LoadTopicsAsync(int? forumID)
 		{
-			if (forumID.HasValue)
+			if (forumID.HasValue && forumID != SelectedForum?.ID)
 			{
 				TopicsLoading = true;
 				try
@@ -151,6 +215,18 @@ namespace Rsdn.JanusNG.Main
 		}
 
 		public TopicNode[] Topics { get; private set; }
+		
+		private bool _messageLoading;
+
+		public bool MessageLoading
+		{
+			get => _messageLoading;
+			set
+			{
+				_messageLoading = value;
+				OnPropertyChanged(nameof(MessageLoading));
+			}
+		}
 
 		public MessageNode Message
 		{
@@ -158,8 +234,33 @@ namespace Rsdn.JanusNG.Main
 			set
 			{
 				_message = value;
-				OnPropertyChanged(nameof(Message));
+				if (value != null)
+				{
+					_varsService.SetVar(
+						_curSelectionVar,
+						new FullMsgID(SelectedForum.ID, value.TopicNode?.Message.ID, value.Message.ID).ToString());
+					LoadMessage(value);
+				}
 			}
+		}
+
+		private async void LoadMessage(MessageNode msg)
+		{
+			MessageLoading = true;
+			try
+			{
+				msg.Message =
+					await _api.Client.Messages.GetMessageAsync(
+						msg.Message.ID,
+						withRates: true,
+						withBodies: true,
+						formatBody: true);
+			}
+			finally
+			{
+				MessageLoading = false;
+			}
+			OnPropertyChanged(nameof(Message));
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;

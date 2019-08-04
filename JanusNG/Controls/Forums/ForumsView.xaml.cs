@@ -24,7 +24,7 @@ namespace Rsdn.JanusNG.Controls.Forums
 				"SelectedForum",
 				typeof(ForumDescription),
 				typeof(ForumsView),
-				new UIPropertyMetadata());
+				new UIPropertyMetadata(SelectedForumChanged));
 
 		public ForumsView()
 		{
@@ -40,29 +40,25 @@ namespace Rsdn.JanusNG.Controls.Forums
 		public ForumDescription SelectedForum
 		{
 			get => (ForumDescription) GetValue(SelectedForumProperty);
-			set
-			{
-				SetValue(SelectedForumProperty, value);
-				if (value != null)
-					SelectForum(value.ID);
-			}
+			set => SetValue(SelectedForumProperty, value);
 		}
 
-		public void SelectForum(int forumID)
+		private void SelectForum(int forumID)
 		{
-			if (SelectedForum?.ID == forumID)
-				return;
 			var forum = Forums
 				.SelectMany(fg => fg.Forums, (fg, f) => new {Group = fg, Forum = f})
 				.FirstOrDefault(f => f.Forum.ID == forumID);
 			if (forum == null)
 				return;
-			var groupTvi = (TreeViewItem)ForumsList.ItemContainerGenerator.ContainerFromItem(forum.Group);
-			groupTvi.IsExpanded = true;
-			if (groupTvi.ItemContainerGenerator.Status != GeneratorStatus.ContainersGenerated)
-				ForumsList.UpdateLayout(); // Generate TreeViewItems
-			var forumTvi = (TreeViewItem)groupTvi.ItemContainerGenerator.ContainerFromItem(forum.Forum);
-			forumTvi.IsSelected = true;
+			ForumsList.SelectItem(forum.Group, forum.Forum);
+		}
+
+		private static void SelectedForumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+		{
+			if (e.NewValue != e.OldValue
+			    && e.NewValue is ForumDescription newForum
+			    && (e.OldValue == null || e.OldValue is ForumDescription oldForum && oldForum.ID != newForum.ID))
+				((ForumsView)d).SelectForum(newForum.ID);
 		}
 
 		private void SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
