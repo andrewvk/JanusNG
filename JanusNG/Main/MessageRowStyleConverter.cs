@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Data;
+using Rsdn.JanusNG.Main.ViewModel;
 
 namespace Rsdn.JanusNG.Main
 {
@@ -30,8 +31,8 @@ namespace Rsdn.JanusNG.Main
 			if (msg is TopicNode topic)
 				return topic.TopicUnreadCount > 0 ? RepliesUnreadStyle : ReadStyle;
 
-			bool HasUnreadReplies(MessageNode msg) =>
-				msg.Children.Any(cm => cm.IsRead == false || HasUnreadReplies(cm));
+			bool HasUnreadReplies(MessageNode m) =>
+				m.Children.Any(cm => cm.IsRead == false || HasUnreadReplies(cm));
 
 			return
 				HasUnreadReplies(msg)

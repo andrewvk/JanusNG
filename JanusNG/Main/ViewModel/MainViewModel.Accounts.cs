@@ -2,7 +2,7 @@
 using System.Windows.Input;
 using Rsdn.JanusNG.Services.Connection;
 
-namespace Rsdn.JanusNG.Main
+namespace Rsdn.JanusNG.Main.ViewModel
 {
 	public partial class MainViewModel
 	{
@@ -17,7 +17,9 @@ namespace Rsdn.JanusNG.Main
 			private set
 			{
 				_currentAccount = value;
+#pragma warning disable 4014
 				LoadForumsAsync();
+#pragma warning restore 4014
 				OnPropertyChanged(nameof(CurrentAccount));
 				OnPropertyChanged(nameof(IsSignedIn));
 				OnPropertyChanged(nameof(IsNotSignedIn));

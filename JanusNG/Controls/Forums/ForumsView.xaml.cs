@@ -1,9 +1,7 @@
 ﻿using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using Rsdn.Api.Models.Forums;
-using Rsdn.JanusNG.Main;
+using Rsdn.JanusNG.Main.ViewModel;
 
 namespace Rsdn.JanusNG.Controls.Forums
 {

@@ -7,7 +7,7 @@ using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Rsdn.Api.Models.Messages;
 using Rsdn.JanusNG.Controls;
-using Rsdn.JanusNG.Services;
+using Rsdn.JanusNG.Main.ViewModel;
 using Rsdn.JanusNG.Services.Connection;
 
 namespace Rsdn.JanusNG.Main
@@ -17,18 +17,14 @@ namespace Rsdn.JanusNG.Main
 	/// </summary>
 	public partial class MainWindow
 	{
-		private const string _curSelectionVar = "MainForm.CurrentSelectionIDs";
 		private readonly ApiConnectionService _api;
-		private readonly VarsService _varsService;
 
 		public MainWindow(
 			IServiceProvider serviceProvider,
-			ApiConnectionService api,
-			VarsService varsService)
+			ApiConnectionService api)
 		{
 			_api = api;
-			_varsService = varsService;
-			ViewModel = ActivatorUtilities.CreateInstance<MainViewModel>(serviceProvider);
+			ViewModel = ActivatorUtilities.CreateInstance<ViewModel.MainViewModel>(serviceProvider);
 			DataContext = ViewModel;
 			InitializeComponent();
 			ViewModel.SignedIn += SignedIn;

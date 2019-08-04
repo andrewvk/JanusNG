@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using Rsdn.Api.Models.Messages;
 
-namespace Rsdn.JanusNG.Main
+namespace Rsdn.JanusNG.Main.ViewModel
 {
 	public class MessageNode : INotifyPropertyChanged
 	{

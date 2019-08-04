@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Linq;
 using System.Windows.Data;
+using Rsdn.JanusNG.Main.ViewModel;
 
 namespace Rsdn.JanusNG.Main
 {

@@ -8,9 +8,10 @@
         xmlns:controls="clr-namespace:Rsdn.JanusNG.Controls"
         xmlns:messageView="clr-namespace:Rsdn.JanusNG.Controls.MessageView"
         xmlns:forums="clr-namespace:Rsdn.JanusNG.Controls.Forums"
+        xmlns:viewModel="clr-namespace:Rsdn.JanusNG.Main.ViewModel"
         mc:Ignorable="d"
         Title="RSDN@Home" Height="900" Width="1600"
-        Loaded="WindowLoaded" d:DataContext="{d:DesignInstance local:MainViewModel}">
+        Loaded="WindowLoaded" d:DataContext="{d:DesignInstance viewModel:MainViewModel}">
 	<Window.Resources>
 	</Window.Resources>
 	<Grid Margin="4">
@@ -46,6 +47,7 @@
 						<MenuItem Header="Accounts" ItemsSource="{Binding Accounts}">
 							<MenuItem.ItemContainerStyle>
 								<Style TargetType="MenuItem">
+									<!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
 									<Setter Property="Command" Value="{Binding SelectAccountCommand}"/>
 								</Style>
 							</MenuItem.ItemContainerStyle>
@@ -155,7 +157,7 @@
 					</TreeView>
 				</Border>
 				<GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" />
-				<messageView:MessageView x:Name="MessageView" Grid.Row="2" Message="{Binding Message, Mode=OneWay}"
+				<messageView:MessageView Grid.Row="2" Message="{Binding Message, Mode=OneWay}"
 				                         Style="{Binding MessageLoading, Converter={StaticResource BusyStyleConverter}}"/>
 			</Grid>
 		</Grid>

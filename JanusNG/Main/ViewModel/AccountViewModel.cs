@@ -1,7 +1,7 @@
 ﻿using System.Windows.Input;
 using Rsdn.JanusNG.Services.Connection;
 
-namespace Rsdn.JanusNG.Main
+namespace Rsdn.JanusNG.Main.ViewModel
 {
 	public class AccountViewModel
 	{

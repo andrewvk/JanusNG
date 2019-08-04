@@ -1,6 +1,6 @@
 ﻿using Rsdn.Api.Models.Forums;
 
-namespace Rsdn.JanusNG.Main
+namespace Rsdn.JanusNG.Main.ViewModel
 {
 	public class ForumGroup
 	{

@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 using Rsdn.Framework.Formatting.Resources;
-using Rsdn.JanusNG.Main;
+using Rsdn.JanusNG.Main.ViewModel;
 using Rsdn.JanusNG.Rates;
 
 namespace Rsdn.JanusNG.Controls.MessageView
