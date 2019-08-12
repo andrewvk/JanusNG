@@ -1,8 +1,17 @@
-﻿namespace Rsdn.JanusNG.Main.ViewModel
+﻿using System;
+using System.Threading.Tasks;
+
+namespace Rsdn.JanusNG.Main.ViewModel
 {
 	public class TopicNode : MessageNode
 	{
+		private readonly Func<TopicNode, Task> _loader;
 		private int _topicUnreadCount;
+
+		public TopicNode(bool? isRead, Func<TopicNode, Task> loader, Func<MessageNode, Task> readMarker) : base(isRead, readMarker)
+		{
+			_loader = loader;
+		}
 
 		public bool IsLoaded { get; set; }
 
@@ -15,5 +24,7 @@
 				OnPropertyChanged(nameof(TopicUnreadCount));
 			}
 		}
+
+		public async Task LoadAsync() => await _loader(this);
 	}
 }

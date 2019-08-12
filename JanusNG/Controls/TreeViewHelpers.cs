@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using CodeJam;
 
@@ -19,7 +20,10 @@ namespace Rsdn.JanusNG.Controls
 					container.UpdateLayout();
 				tvi = (TreeViewItem) container.ItemContainerGenerator.ContainerFromItem(node);
 				if (tvi == null)
+				{
+					MessageBox.Show($"Oops! {container.ItemContainerGenerator.Status}");
 					return;
+				}
 				tvi.IsExpanded = true;
 				container = tvi;
 			}

@@ -1,5 +1,7 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Rsdn.Api.Models.Messages;
 
@@ -7,9 +9,16 @@ namespace Rsdn.JanusNG.Main.ViewModel
 {
 	public class MessageNode : INotifyPropertyChanged
 	{
+		private readonly Func<MessageNode, Task> _readMarker;
 		private MessageNode[] _children;
 		private bool? _isRead;
 		public MessageInfo Message { get; set; }
+
+		public MessageNode(bool? isRead, Func<MessageNode, Task> readMarker)
+		{
+			_readMarker = readMarker;
+			_isRead = isRead;
+		}
 
 		public MessageNode[] Children
 		{
@@ -51,5 +60,7 @@ namespace Rsdn.JanusNG.Main.ViewModel
 		{
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
+
+		public async Task MarkReadAsync() => await _readMarker(this);
 	}
 }

@@ -17,35 +17,44 @@ namespace Rsdn.JanusNG.Main.ViewModel
 				.Items
 				.GroupBy(m => m.ParentID)
 				.ToDictionary(grp => grp.Key, grp => grp.ToArray());
-			topic.Children = BuildTopicTree(messageMap, topic.Message.ID, 0, topic, topic);
+			topic.Children = BuildTopicTree(messageMap, 0, topic, topic);
 			topic.IsLoaded = true;
 		}
 
-		private static MessageNode[] BuildTopicTree(
+		private MessageNode[] BuildTopicTree(
 			IReadOnlyDictionary<int, MessageInfo[]> messageMap,
-			int parentID,
 			int level,
-			TopicNode topicNode,
-			MessageNode parentNode)
+			TopicNode topic,
+			MessageNode parent)
 		{
-			if (!messageMap.TryGetValue(parentID, out var children))
+			if (!messageMap.TryGetValue(parent.Message.ID, out var children))
 				return Array.Empty<MessageNode>();
 			level += 1;
 			return children
 				.Select(c =>
 				{
-					var res = new MessageNode
+					var res = new MessageNode(c.IsRead, MarkMessageReadAsync)
 					{
 						Message = c,
 						Level = level,
-						IsRead = c.IsRead,
-						TopicNode = topicNode,
-						ParentNode = parentNode
+						TopicNode = topic,
+						ParentNode = parent
 					};
-					res.Children = BuildTopicTree(messageMap, c.ID, level, topicNode, res);
+					res.Children = BuildTopicTree(messageMap, level, topic, res);
 					return res;
 				})
 				.ToArray();
+		}
+
+		private async Task MarkMessageReadAsync(MessageNode msg)
+		{
+			if (msg.IsRead == true || msg.Message.ID != Message.Message.ID)
+				return;
+			await _api.Client.ReadMarks.AddReadMarksAsync(new []{msg.Message.ID});
+			if (msg.TopicNode != null)
+				lock (msg.TopicNode)
+					msg.TopicNode.TopicUnreadCount = msg.TopicNode.TopicUnreadCount - 1;
+			msg.IsRead = true;
 		}
 
 		private bool _topicsLoading;
@@ -75,12 +84,11 @@ namespace Rsdn.JanusNG.Main.ViewModel
 							withReadMarks: true,
 							order: MessageOrder.LastAnswerDesc))
 						.Items
-						.Select(m => new TopicNode
+						.Select(m => new TopicNode(m.IsRead, LoadRepliesAsync, MarkMessageReadAsync)
 						{
 							Message = m,
 							IsLoaded = m.AnswersCount == 0,
 							Children = m.AnswersCount != 0 ? new MessageNode[] {new PlaceholderNode()} : Array.Empty<MessageNode>(),
-							IsRead = m.IsRead,
 							TopicUnreadCount = m.TopicUnreadCount.GetValueOrDefault()
 						})
 						.ToArray();
@@ -118,11 +126,11 @@ namespace Rsdn.JanusNG.Main.ViewModel
 				_varsService.SetVar(
 					_curSelectionVar,
 					 SelectedForum == null ? null : new FullMsgID(SelectedForum.ID, value?.TopicNode?.Message.ID, value?.Message.ID).ToString());
-				LoadMessage(value);
+				LoadMessageAsync(value);
 			}
 		}
 
-		private async void LoadMessage(MessageNode msg)
+		private async void LoadMessageAsync(MessageNode msg)
 		{
 			if (msg != null)
 			{

@@ -41,22 +41,20 @@ namespace Rsdn.JanusNG.Controls.Forums
 			set => SetValue(SelectedForumProperty, value);
 		}
 
-		private void SelectForum(int forumID)
-		{
-			var forum = Forums
-				.SelectMany(fg => fg.Forums, (fg, f) => new {Group = fg, Forum = f})
-				.FirstOrDefault(f => f.Forum.ID == forumID);
-			if (forum == null)
-				return;
-			ForumsList.SelectItem(forum.Group, forum.Forum);
-		}
-
 		private static void SelectedForumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
-			if (e.NewValue != e.OldValue
-			    && e.NewValue is ForumDescription newForum
-			    && (e.OldValue == null || e.OldValue is ForumDescription oldForum && oldForum.ID != newForum.ID))
-				((ForumsView)d).SelectForum(newForum.ID);
+			if (e.NewValue == e.OldValue
+			    || !(e.NewValue is ForumDescription newForum)
+			    || e.OldValue != null && (!(e.OldValue is ForumDescription oldForum) || oldForum.ID == newForum.ID))
+				return;
+			var frmView = ((ForumsView)d);
+			var forum = frmView
+				.Forums
+				.SelectMany(fg => fg.Forums, (fg, f) => new {Group = fg, Forum = f})
+				.FirstOrDefault(f => f.Forum.ID == newForum.ID);
+			if (forum == null)
+				return;
+			frmView.ForumsList.SelectItem(forum.Group, forum.Forum);
 		}
 
 		private void SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)

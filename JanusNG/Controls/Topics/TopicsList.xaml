@@ -1,0 +1,86 @@
+﻿<UserControl x:Class="Rsdn.JanusNG.Controls.Topics.TopicsList"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Rsdn.JanusNG.Controls.Topics"
+             xmlns:main="clr-namespace:Rsdn.JanusNG.Main"
+             xmlns:controls="clr-namespace:Rsdn.JanusNG.Controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800" d:DataContext="{d:DesignInstance local:TopicsList}">
+				<Border>
+					<Border.Resources>
+						<main:ReplyCountConverter x:Key="ReplyCountConv"/>
+						<Style x:Key="CellBaseStyle" TargetType="Control">
+							<Setter Property="Margin" Value="3, 0, 3, 0"/>
+						</Style>
+						<main:MessageRowStyleConverter x:Key="RowStyleConverter" PlaceholderStyle="{StaticResource BusyAnimationSmallStyle}">
+							<main:MessageRowStyleConverter.ReadStyle>
+								<Style TargetType="{x:Type Control}" BasedOn="{StaticResource CellBaseStyle}">
+									<Setter Property="FontWeight" Value="Normal"/>
+								</Style>
+							</main:MessageRowStyleConverter.ReadStyle>
+							<main:MessageRowStyleConverter.UnreadStyle>
+								<Style TargetType="{x:Type Control}" BasedOn="{StaticResource CellBaseStyle}">
+									<Setter Property="FontWeight" Value="Bold"/>
+								</Style>
+							</main:MessageRowStyleConverter.UnreadStyle>
+							<main:MessageRowStyleConverter.RepliesUnreadStyle>
+								<Style TargetType="{x:Type Control}" BasedOn="{StaticResource CellBaseStyle}">
+									<Setter Property="FontWeight" Value="DemiBold"/>
+								</Style>
+							</main:MessageRowStyleConverter.RepliesUnreadStyle>
+						</main:MessageRowStyleConverter>
+						<main:FillWidthConverter x:Key="FillWidthConverter"/>
+					</Border.Resources>
+					<TreeView Name="MessagesList" ItemsSource="{Binding Topics}" SelectedItemChanged="MessageSelectionChanged"
+					          TreeViewItem.Expanded="TopicExpanded">
+						<TreeView.ItemContainerStyle>
+							<Style TargetType="TreeViewItem">
+								<Setter Property="Margin" Value="-8,0,0,0"/>
+							</Style>
+						</TreeView.ItemContainerStyle>
+						<TreeView.ItemTemplate>
+							<HierarchicalDataTemplate ItemsSource="{Binding Children}">
+								<Grid>
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="480"/>
+										<ColumnDefinition/>
+										<ColumnDefinition Width="140"/>
+										<ColumnDefinition Width="80"/>
+										<ColumnDefinition Width="80"/>
+										<ColumnDefinition Width="120"/>
+									</Grid.ColumnDefinitions>
+									<Label Content="{Binding Message.Subject}">
+										<Label.Style>
+											<MultiBinding Converter="{StaticResource RowStyleConverter}">
+												<Binding/>
+												<Binding Path="IsRead"/>
+											</MultiBinding>
+										</Label.Style>
+									</Label>
+									<TextBlock Grid.Column="1" Width="{Binding Converter={StaticResource FillWidthConverter}}"/>
+									<StackPanel Grid.Column="2" Orientation="Horizontal">
+										<controls:Gravatar Size="16" Hash="{Binding Message.Author.GravatarHash, IsAsync=True}"/>
+										<Label Content="{Binding Message.Author.DisplayName}"
+										           Style="{StaticResource CellBaseStyle}"/>
+									</StackPanel>
+									<Label Grid.Column="3" HorizontalAlignment="Right" Style="{StaticResource CellBaseStyle}">
+										<Label.Content>
+											<MultiBinding Converter="{StaticResource ReplyCountConv}">
+												<Binding/>
+												<Binding Path="IsRead"/>
+											</MultiBinding>
+										</Label.Content>
+									</Label>
+									<Label Grid.Column="4" Content="{Binding Message.Rates, Converter={StaticResource RateStringConverter}}"
+									           Style="{StaticResource CellBaseStyle}" HorizontalAlignment="Right"/>
+									<Label Grid.Column="5" Content="{Binding Message.CreatedOn, Converter={StaticResource DateConverter}}"
+									       HorizontalAlignment="Right" Style="{StaticResource CellBaseStyle}"/>
+								</Grid>
+
+							</HierarchicalDataTemplate>
+						</TreeView.ItemTemplate>
+					</TreeView>
+				</Border>
+</UserControl>
