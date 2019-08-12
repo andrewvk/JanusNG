@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Rsdn.Api.Models.Messages;
+using Rsdn.Framework.Formatting;
 
 namespace Rsdn.JanusNG.Main.ViewModel
 {
@@ -130,6 +131,8 @@ namespace Rsdn.JanusNG.Main.ViewModel
 			}
 		}
 
+		private readonly TextFormatter _formatter = new TextFormatter();
+
 		private async void LoadMessageAsync(MessageNode msg)
 		{
 			if (msg != null)
@@ -137,12 +140,14 @@ namespace Rsdn.JanusNG.Main.ViewModel
 				MessageLoading = true;
 				try
 				{
-					msg.Message =
+					var fullMsg =
 						await _api.Client.Messages.GetMessageAsync(
 							msg.Message.ID,
 							withRates: true,
 							withBodies: true,
-							formatBody: true);
+							formatBody: false);
+					fullMsg.Body.Text = _formatter.Format(fullMsg.Body.Text);
+					msg.Message = fullMsg;
 				}
 				finally
 				{
